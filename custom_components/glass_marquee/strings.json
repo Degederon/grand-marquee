@@ -1,0 +1,40 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Glass Marquee",
+        "description": "Adds a glass-styled scrolling marquee card to your dashboards and a sensor that holds its messages."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Glass Marquee is already set up."
+    }
+  },
+  "services": {
+    "add_message": {
+      "name": "Add message",
+      "description": "Add a message to the marquee. Re-using an id replaces that message.",
+      "fields": {
+        "text": { "name": "Text", "description": "Message text." },
+        "icon": { "name": "Icon", "description": "Optional MDI icon." },
+        "color": { "name": "Color", "description": "Optional accent color (hex or r,g,b)." },
+        "duration": { "name": "Duration", "description": "Remove the message automatically after this long." },
+        "id": { "name": "ID", "description": "Optional id, so you can replace or remove it later." }
+      }
+    },
+    "remove_message": {
+      "name": "Remove message",
+      "description": "Remove a message by id.",
+      "fields": { "id": { "name": "ID", "description": "Id of the message to remove." } }
+    },
+    "clear_messages": {
+      "name": "Clear messages",
+      "description": "Remove every message from the marquee."
+    },
+    "set_messages": {
+      "name": "Set messages",
+      "description": "Replace all messages at once.",
+      "fields": { "messages": { "name": "Messages", "description": "List of strings or message objects." } }
+    }
+  }
+}
