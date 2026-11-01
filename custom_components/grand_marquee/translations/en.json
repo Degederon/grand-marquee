@@ -2,12 +2,12 @@
   "config": {
     "step": {
       "user": {
-        "title": "Glass Marquee",
+        "title": "Grand Marquee",
         "description": "Adds a glass-styled scrolling marquee card to your dashboards and a sensor that holds its messages."
       }
     },
     "abort": {
-      "single_instance_allowed": "Glass Marquee is already set up."
+      "single_instance_allowed": "Grand Marquee is already set up."
     }
   },
   "services": {

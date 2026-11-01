@@ -1,12 +1,12 @@
-"""Constants for Glass Marquee."""
+"""Constants for Grand Marquee."""
 
-DOMAIN = "glass_marquee"
-VERSION = "1.1.0"
+DOMAIN = "grand_marquee"
+VERSION = "1.0.0"
 
 STORAGE_KEY = f"{DOMAIN}.messages"
 STORAGE_VERSION = 1
 
-CARD_FILENAME = "glass-marquee-card.js"
+CARD_FILENAME = "grand-marquee.js"
 CARD_URL_BASE = f"/{DOMAIN}"
 CARD_URL = f"{CARD_URL_BASE}/{CARD_FILENAME}"
 
