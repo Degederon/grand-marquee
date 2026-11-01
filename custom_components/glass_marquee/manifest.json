@@ -1,0 +1,14 @@
+{
+  "domain": "glass_marquee",
+  "name": "Glass Marquee",
+  "codeowners": ["@Degederon"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http"],
+  "documentation": "https://github.com/Degederon/grand-marquee",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/Degederon/grand-marquee/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "1.1.0"
+}

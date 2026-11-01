@@ -1,0 +1,41 @@
+add_message:
+  fields:
+    text:
+      required: true
+      example: "Dinner at 6:30 🍝"
+      selector:
+        text:
+    icon:
+      example: mdi:silverware-fork-knife
+      selector:
+        icon:
+    color:
+      example: "#7dd3fc"
+      selector:
+        text:
+    duration:
+      example: "01:00:00"
+      selector:
+        duration:
+    id:
+      example: dinner
+      selector:
+        text:
+
+remove_message:
+  fields:
+    id:
+      required: true
+      example: dinner
+      selector:
+        text:
+
+clear_messages:
+
+set_messages:
+  fields:
+    messages:
+      required: true
+      example: '["Good morning!", {"text": "Trash day", "icon": "mdi:delete"}]'
+      selector:
+        object:
