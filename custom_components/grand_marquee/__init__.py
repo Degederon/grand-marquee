@@ -22,6 +22,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
+from .news import DEFAULT_PER_FEED, DEFAULT_REFRESH_MINUTES, DEFAULT_TOPICS, NewsCoordinator
 from .resources import async_ensure_resource, resource_url
 from .const import (
     ATTR_COLOR,
@@ -32,6 +33,10 @@ from .const import (
     ATTR_TEXT,
     CARD_FILENAME,
     CARD_URL,
+    CONF_CUSTOM_FEEDS,
+    CONF_NEWS_TOPICS,
+    CONF_PER_FEED,
+    CONF_REFRESH_MINUTES,
     DOMAIN,
     SERVICE_ADD,
     SERVICE_CLEAR,
@@ -188,8 +193,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(DOMAIN, SERVICE_CLEAR, clear_messages)
     hass.services.async_register(DOMAIN, SERVICE_SET, set_messages, SET_SCHEMA)
 
+    # Headlines for the card's News source. Fetched in the background so a slow
+    # feed never holds up Home Assistant's startup.
+    opts = entry.options
+    news = NewsCoordinator(
+        hass,
+        topics=opts.get(CONF_NEWS_TOPICS, DEFAULT_TOPICS),
+        custom_feeds=opts.get(CONF_CUSTOM_FEEDS, []),
+        refresh_minutes=opts.get(CONF_REFRESH_MINUTES, DEFAULT_REFRESH_MINUTES),
+        per_feed=opts.get(CONF_PER_FEED, DEFAULT_PER_FEED),
+    )
+    hass.data[f"{DOMAIN}_news"] = news
+    entry.async_create_background_task(hass, news.async_refresh(), f"{DOMAIN} first news refresh")
+    entry.async_on_unload(entry.add_update_listener(_async_options_updated))
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """New news topics or feeds: reload so they're fetched straight away."""
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -198,4 +222,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for svc in (SERVICE_ADD, SERVICE_REMOVE, SERVICE_CLEAR, SERVICE_SET):
             hass.services.async_remove(DOMAIN, svc)
         hass.data.pop(DOMAIN, None)
+        hass.data.pop(f"{DOMAIN}_news", None)
     return unloaded

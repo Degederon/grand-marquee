@@ -1,7 +1,7 @@
 """Constants for Grand Marquee."""
 
 DOMAIN = "grand_marquee"
-VERSION = "1.0.1"
+VERSION = "1.1.0"
 
 STORAGE_KEY = f"{DOMAIN}.messages"
 STORAGE_VERSION = 1
@@ -23,3 +23,9 @@ ATTR_COLOR = "color"
 ATTR_DURATION = "duration"
 ATTR_ID = "id"
 ATTR_MESSAGES = "messages"
+
+# News source (set in Settings > Devices & services > Grand Marquee > Configure)
+CONF_NEWS_TOPICS = "news_topics"
+CONF_CUSTOM_FEEDS = "custom_feeds"
+CONF_REFRESH_MINUTES = "refresh_minutes"
+CONF_PER_FEED = "headlines_per_feed"

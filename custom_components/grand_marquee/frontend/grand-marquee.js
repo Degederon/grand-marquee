@@ -3,7 +3,7 @@
  * Shipped and auto-registered by the grand_marquee integration (can also be
  * added manually as a dashboard resource).
  */
-const GM_VERSION = "1.0.1";
+const GM_VERSION = "1.1.0";
 
 // `plain` is the solid background used when style: plain and no custom color is set.
 const THEMES = {
@@ -101,6 +101,42 @@ const DEFAULTS = {
 };
 
 const DEFAULT_ENTITY = "sensor.grand_marquee_messages";
+const NEWS_ENTITY = "sensor.grand_marquee_news";
+
+// What the marquee can show, in the order they appear unless `sources` says otherwise.
+const SOURCES = {
+  messages: "Messages",
+  weather: "Weather",
+  news: "News",
+  calendar: "Calendar",
+  todo: "To-do lists",
+  sun: "Sunrise & sunset",
+  date: "Date",
+  entities: "Entity values",
+};
+const DEFAULT_SOURCES = ["messages", "entities"];
+
+const NEWS_TOPICS = {
+  top: "Top stories", world: "World", nation: "National", business: "Business",
+  technology: "Technology", entertainment: "Entertainment", sports: "Sports",
+  science: "Science", health: "Health", custom: "Your own feeds",
+};
+
+const WEATHER_ICONS = {
+  "clear-night": "mdi:weather-night", cloudy: "mdi:weather-cloudy", exceptional: "mdi:alert-circle-outline",
+  fog: "mdi:weather-fog", hail: "mdi:weather-hail", lightning: "mdi:weather-lightning",
+  "lightning-rainy": "mdi:weather-lightning-rainy", partlycloudy: "mdi:weather-partly-cloudy",
+  pouring: "mdi:weather-pouring", rainy: "mdi:weather-rainy", snowy: "mdi:weather-snowy",
+  "snowy-rainy": "mdi:weather-snowy-rainy", sunny: "mdi:weather-sunny", windy: "mdi:weather-windy",
+  "windy-variant": "mdi:weather-windy-variant",
+};
+const WEATHER_TEXT = {
+  "clear-night": "Clear", cloudy: "Cloudy", exceptional: "Unusual weather", fog: "Fog", hail: "Hail",
+  lightning: "Thunderstorms", "lightning-rainy": "Thunderstorms and rain", partlycloudy: "Partly cloudy",
+  pouring: "Heavy rain", rainy: "Rain", snowy: "Snow", "snowy-rainy": "Sleet", sunny: "Sunny",
+  windy: "Windy", "windy-variant": "Windy and cloudy",
+};
+const LIST_REFRESH_MS = 10 * 60 * 1000; // calendar and to-do lists
 
 /* ---------- helpers ---------- */
 function toRGB(v, fallback) {
@@ -146,12 +182,15 @@ class GrandMarqueeCard extends HTMLElement {
     if (!config) throw new Error("Invalid configuration");
     this._config = { ...DEFAULTS, ...config };
     this._sig = "";
+    this._listsKey = null;     // re-fetch calendar / to-do for the new settings
+    if (this._hass) this._ensureSources();
     this._renderShell();
     this._update();
   }
 
   set hass(hass) {
     this._hass = hass;
+    this._ensureSources();
     this._update();
   }
 
@@ -166,6 +205,7 @@ class GrandMarqueeCard extends HTMLElement {
   connectedCallback() {
     if (document.fonts) document.fonts.addEventListener("loadingdone", this._onFonts);
     if (this._config) this._applyPosition();
+    if (this._config && this._hass) this._ensureSources();
     this._scheduleMeasure();
   }
 
@@ -176,6 +216,7 @@ class GrandMarqueeCard extends HTMLElement {
     this._observed = false;
     if (document.fonts) document.fonts.removeEventListener("loadingdone", this._onFonts);
     this._trackArea(false);
+    this._stopSources();
   }
 
   /* ----- colors ----- */
@@ -300,6 +341,18 @@ class GrandMarqueeCard extends HTMLElement {
         }
         .item ha-icon { --mdc-icon-size: calc(var(--gm-font) * 1.15); color: var(--item-color, var(--gm-accent)); flex: none; }
         .item .name { opacity: 0.75; }
+        .item .pre { opacity: 0.72; font-weight: 600; }
+        .item .sub { opacity: 0.55; font-size: 0.78em; margin-left: 2px; }
+        .item .tag {
+          flex: none; align-self: center;
+          font-size: max(10px, calc(var(--gm-font) * 0.55)); font-weight: 700; line-height: 1;
+          letter-spacing: 0.08em; text-transform: uppercase;
+          padding: 0.45em 0.75em; border-radius: 999px;
+          color: var(--gm-text);
+          background: rgba(${rgb(p.accent)}, 0.2);
+          border: 1px solid rgba(${rgb(p.accent)}, 0.45);
+          text-shadow: none;
+        }
         .sep {
           display: inline-block; flex: none; padding-right: var(--gm-gap);
           color: var(--gm-accent); font-size: var(--gm-font); opacity: 0.9;
@@ -388,15 +441,277 @@ class GrandMarqueeCard extends HTMLElement {
     if (area) { this._areaRO = new ResizeObserver(this._areaHandler); this._areaRO.observe(area); }
   }
 
-  /* ----- data ----- */
-  _collect() {
+  /* ----- data sources ----- */
+  _sources() {
+    const list = this._config.sources;
+    if (Array.isArray(list) && list.length) return list.filter((x) => x in SOURCES);
+    return DEFAULT_SOURCES;
+  }
+
+  _lang() {
+    const h = this._hass;
+    return (h && ((h.locale && h.locale.language) || h.language)) || navigator.language || "en";
+  }
+
+  _time(date) {
+    const fmt = this._hass && this._hass.locale && this._hass.locale.time_format;
+    const hour12 = fmt === "12" ? true : fmt === "24" ? false : undefined;
+    return date.toLocaleTimeString(this._lang(), { hour: "numeric", minute: "2-digit", hour12 });
+  }
+
+  _dayLabel(date) {
+    const now = new Date();
+    const day = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const diff = Math.round((day(date) - day(now)) / 86400000);
+    if (diff === 0) return "";
+    const rel = new Intl.RelativeTimeFormat(this._lang(), { numeric: "auto" });
+    if (diff === 1) { const t = rel.format(1, "day"); return t[0].toUpperCase() + t.slice(1); }
+    return date.toLocaleDateString(this._lang(), { weekday: "short" });
+  }
+
+  _ids(conf, domain) {
+    if (Array.isArray(conf) && conf.length) return conf.filter((id) => this._hass.states[id]);
+    if (typeof conf === "string" && conf) return this._hass.states[conf] ? [conf] : [];
+    return Object.keys(this._hass.states).filter((id) => id.startsWith(domain + "."));
+  }
+
+  _ensureSources() {
+    if (!this._config || !this._hass || !this.isConnected) return;
+    this._ensureWeather();
+    this._ensureLists();
+  }
+
+  _stopSources() {
+    this._unsubWeather();
+    clearInterval(this._listTimer);
+    clearTimeout(this._listDebounce);
+    this._listTimer = null;
+    this._listsKey = null;
+    this._listsStamp = null;
+  }
+
+  /* weather: live forecast subscription for today's high, low and rain chance */
+  _weatherId() {
+    const c = this._config;
+    if (c.weather_entity) return this._hass.states[c.weather_entity] ? c.weather_entity : null;
+    return Object.keys(this._hass.states).find((id) => id.startsWith("weather.")) || null;
+  }
+
+  _unsubWeather() {
+    if (this._weatherUnsub) { try { this._weatherUnsub(); } catch (e) { /* already gone */ } }
+    this._weatherUnsub = null;
+    this._weatherFor = null;
+    this._forecast = null;
+  }
+
+  async _ensureWeather() {
+    const want = this._sources().includes("weather") ? this._weatherId() : null;
+    if (want === this._weatherFor) return;
+    this._unsubWeather();
+    this._weatherFor = want;
+    const conn = this._hass.connection;
+    if (!want || !conn || !conn.subscribeMessage) return;
+    const f = this._hass.states[want].attributes.supported_features || 0;
+    const type = f & 1 ? "daily" : f & 4 ? "twice_daily" : f & 2 ? "hourly" : null;
+    if (!type) return; // no forecast: current conditions only
+    try {
+      const unsub = await conn.subscribeMessage((ev) => {
+        if (this._weatherFor !== want) return;
+        this._forecast = { type, list: (ev && ev.forecast) || [] };
+        this._update();
+      }, { type: "weather/subscribe_forecast", forecast_type: type, entity_id: want });
+      if (this._weatherFor === want) this._weatherUnsub = unsub;
+      else unsub();
+    } catch (e) {
+      /* forecast not available; current conditions still show */
+    }
+  }
+
+  _conditionText(cond, stateObj) {
+    const h = this._hass;
+    if (stateObj && h.formatEntityState) return h.formatEntityState(stateObj);
+    const key = `component.weather.entity_component._.state.${cond}`;
+    const t = h.localize ? h.localize(key) : "";
+    return t || WEATHER_TEXT[cond] || cond || "";
+  }
+
+  _forecastDay(offset) {
+    if (!this._forecast || !this._forecast.list.length) return null;
+    const target = new Date();
+    target.setDate(target.getDate() + offset);
+    const same = (d) => d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth() && d.getDate() === target.getDate();
+    const entries = this._forecast.list.filter((e) => same(new Date(e.datetime)));
+    if (!entries.length) return null;
+    const temps = entries.map((e) => e.temperature).filter((v) => typeof v === "number");
+    const lows = entries.map((e) => (typeof e.templow === "number" ? e.templow : e.temperature)).filter((v) => typeof v === "number");
+    const rain = entries.map((e) => e.precipitation_probability).filter((v) => typeof v === "number");
+    const midday = entries.find((e) => { const h = new Date(e.datetime).getHours(); return h >= 11 && h <= 15; }) || entries[0];
+    return {
+      hi: temps.length ? Math.max(...temps) : null,
+      lo: lows.length ? Math.min(...lows) : null,
+      rain: rain.length ? Math.max(...rain) : null,
+      cond: midday.condition,
+    };
+  }
+
+  _weatherItems() {
+    const id = this._weatherId();
+    const st = id && this._hass.states[id];
+    if (!st || ["unknown", "unavailable"].includes(st.state)) return [];
+    const a = st.attributes;
+    const unit = a.temperature_unit || "°";
+    const deg = (v) => `${Math.round(v)}°`;
+    const parts = [this._conditionText(st.state, st)];
+    if (typeof a.temperature === "number") parts.push(`${Math.round(a.temperature)}${unit} now`);
+    const today = this._forecastDay(0);
+    if (today) {
+      if (today.hi !== null) parts.push(`High ${deg(today.hi)}`);
+      if (today.lo !== null && today.lo !== today.hi) parts.push(`Low ${deg(today.lo)}`);
+      if (today.rain) parts.push(`${Math.round(today.rain)}% chance of rain`);
+    }
+    const items = [{ text: parts.join(" · "), icon: WEATHER_ICONS[st.state] || "mdi:weather-partly-cloudy", tag: "Weather" }];
+    const tomorrow = this._config.weather_tomorrow ? this._forecastDay(1) : null;
+    if (tomorrow) {
+      const t = [this._conditionText(tomorrow.cond)];
+      if (tomorrow.hi !== null) t.push(tomorrow.lo !== null && tomorrow.lo !== tomorrow.hi ? `${deg(tomorrow.hi)} / ${deg(tomorrow.lo)}` : deg(tomorrow.hi));
+      if (tomorrow.rain) t.push(`${Math.round(tomorrow.rain)}% chance of rain`);
+      items.push({ text: t.join(" · "), icon: WEATHER_ICONS[tomorrow.cond] || "mdi:weather-partly-cloudy", tag: this._dayLabel(new Date(Date.now() + 86400000)) || "Tomorrow" });
+    }
+    return items;
+  }
+
+  /* calendar and to-do: fetched every 10 minutes and whenever those entities change */
+  _ensureLists() {
+    const src = this._sources();
+    const c = this._config;
+    const cal = src.includes("calendar") ? this._ids(c.calendar_entities, "calendar") : [];
+    const todo = src.includes("todo") ? this._ids(c.todo_entities, "todo") : [];
+    const key = JSON.stringify([cal, todo, num(c.calendar_hours, 24)]);
+    const stamp = cal.concat(todo).map((id) => this._hass.states[id].last_updated).join("|");
+    if (key !== this._listsKey) {
+      this._listsKey = key;
+      this._listsStamp = stamp;
+      clearInterval(this._listTimer);
+      this._listTimer = cal.length || todo.length ? setInterval(() => this._fetchLists(cal, todo), LIST_REFRESH_MS) : null;
+      this._events = []; this._todos = [];
+      if (cal.length || todo.length) this._fetchLists(cal, todo);
+    } else if (stamp !== this._listsStamp) {
+      this._listsStamp = stamp;
+      clearTimeout(this._listDebounce);
+      this._listDebounce = setTimeout(() => this._fetchLists(cal, todo), 1500);
+    }
+  }
+
+  async _call(domain, service, target, data) {
+    const r = await this._hass.callWS({
+      type: "call_service", domain, service, target: { entity_id: target },
+      service_data: data, return_response: true,
+    });
+    return (r && r.response) || {};
+  }
+
+  async _fetchLists(cal, todo) {
+    if (!this._hass || !this._hass.callWS) return;
+    const c = this._config;
+    if (cal.length) {
+      try {
+        const resp = await this._call("calendar", "get_events", cal, { duration: { hours: num(c.calendar_hours, 24) } });
+        this._events = Object.entries(resp)
+          .flatMap(([id, v]) => ((v && v.events) || []).map((e) => ({ ...e, calendar: id })))
+          .sort((x, y) => new Date(x.start) - new Date(y.start));
+      } catch (e) { this._events = []; }
+    }
+    if (todo.length) {
+      try {
+        const resp = await this._call("todo", "get_items", todo, { status: ["needs_action"] });
+        this._todos = Object.entries(resp).map(([id, v]) => ({ id, items: (v && v.items) || [] }));
+      } catch (e) { this._todos = []; }
+    }
+    this._update();
+  }
+
+  _calendarItems() {
+    const now = new Date();
+    return (this._events || [])
+      .filter((e) => new Date(e.end || e.start) > now)
+      .slice(0, num(this._config.calendar_count, 6))
+      .map((e) => {
+        const allDay = typeof e.start === "string" && e.start.length <= 10;
+        const start = allDay ? new Date(e.start + "T00:00:00") : new Date(e.start);
+        const day = this._dayLabel(start);
+        const when = allDay ? (day || "Today") : `${day ? day + " " : ""}${start < now ? "Now" : this._time(start)}`;
+        return { pre: when, text: e.summary || "Event", icon: "mdi:calendar", tag: "Calendar" };
+      });
+  }
+
+  _todoItems() {
+    const max = num(this._config.todo_count, 5);
+    return (this._todos || [])
+      .filter((l) => l.items.length)
+      .map((l) => {
+        const st = this._hass.states[l.id];
+        const shown = l.items.slice(0, max).map((i) => i.summary).join(", ");
+        const more = l.items.length - max;
+        return {
+          pre: (st && st.attributes.friendly_name) || l.id,
+          text: more > 0 ? `${shown} +${more} more` : shown,
+          icon: "mdi:clipboard-check-outline",
+          tag: "To-do",
+        };
+      });
+  }
+
+  _newsItems() {
+    const c = this._config;
+    const st = this._hass.states[NEWS_ENTITY];
+    if (!st) return [];
+    const wanted = Array.isArray(c.news_topics) && c.news_topics.length ? c.news_topics : null;
+    let list = st.attributes.headlines || [];
+    if (wanted) list = list.filter((h) => wanted.includes(h.category));
+    const items = list.slice(0, num(c.news_count, 8)).map((h) => ({
+      text: h.title,
+      sub: c.news_source === false ? "" : h.source,
+      icon: "mdi:newspaper-variant-outline",
+      tag: h.label || "News",
+    }));
+    // A topic picked on the card but not turned on in the integration: say where to turn it on.
+    const enabled = st.attributes.topics || [];
+    const off = (wanted || []).filter((t) => t !== "custom" && !enabled.includes(t));
+    if (off.length) {
+      items.push({
+        text: `Turn on ${off.map((t) => NEWS_TOPICS[t] || t).join(", ")} news under Settings → Devices & services → Grand Marquee → Configure`,
+        icon: "mdi:information-outline",
+        tag: "News",
+      });
+    }
+    return items;
+  }
+
+  _sunItems() {
+    const st = this._hass.states["sun.sun"];
+    if (!st) return [];
+    const rise = st.attributes.next_rising && new Date(st.attributes.next_rising);
+    const set = st.attributes.next_setting && new Date(st.attributes.next_setting);
+    const parts = [];
+    if (rise) parts.push([rise, `Sunrise ${this._time(rise)}`]);
+    if (set) parts.push([set, `Sunset ${this._time(set)}`]);
+    if (!parts.length) return [];
+    parts.sort((x, y) => x[0] - y[0]);
+    const icon = parts[0][1].startsWith("Sunset") ? "mdi:weather-sunset-down" : "mdi:weather-sunset-up";
+    return [{ text: parts.map((x) => x[1]).join(" · "), icon }];
+  }
+
+  _dateItems() {
+    const text = new Date().toLocaleDateString(this._lang(), { weekday: "long", month: "long", day: "numeric" });
+    return [{ text, icon: "mdi:calendar-today" }];
+  }
+
+  _messageItems() {
     const c = this._config;
     const hass = this._hass;
     const items = [];
     const norm = (m) => (typeof m === "string" ? { text: m } : m && m.text !== undefined ? m : null);
-
     (c.messages || []).forEach((m) => { const n = norm(m); if (n) items.push(n); });
-
     const entityId = c.entity === undefined ? (hass && hass.states[DEFAULT_ENTITY] ? DEFAULT_ENTITY : null) : c.entity;
     if (entityId && hass && hass.states[entityId]) {
       const st = hass.states[entityId];
@@ -404,20 +719,40 @@ class GrandMarqueeCard extends HTMLElement {
       if (Array.isArray(list)) list.forEach((m) => { const n = norm(m); if (n) items.push(n); });
       else if (entityId !== DEFAULT_ENTITY && st.state && !["unknown", "unavailable", ""].includes(st.state)) items.push({ text: st.state });
     }
+    return items;
+  }
 
-    (c.entities || []).forEach((e) => {
+  _entityItems() {
+    const hass = this._hass;
+    return (this._config.entities || []).flatMap((e) => {
       const conf = typeof e === "string" ? { entity: e } : e;
       const st = hass && hass.states[conf.entity];
-      if (!st) return;
+      if (!st) return [];
       const value = hass.formatEntityState ? hass.formatEntityState(st) : `${st.state}${st.attributes.unit_of_measurement ? " " + st.attributes.unit_of_measurement : ""}`;
-      items.push({
+      return [{
         name: conf.name !== undefined ? conf.name : st.attributes.friendly_name || conf.entity,
         text: value,
         icon: conf.icon || st.attributes.icon,
         color: conf.color,
-      });
+      }];
     });
-    return items;
+  }
+
+  _collect() {
+    if (!this._hass) return this._messageItems();
+    const build = {
+      messages: () => this._messageItems(),
+      weather: () => this._weatherItems(),
+      news: () => this._newsItems(),
+      calendar: () => this._calendarItems(),
+      todo: () => this._todoItems(),
+      sun: () => this._sunItems(),
+      date: () => this._dateItems(),
+      entities: () => this._entityItems(),
+    };
+    return this._sources().flatMap((src) => {
+      try { return build[src](); } catch (e) { return []; }
+    });
   }
 
   _update() {
@@ -445,7 +780,10 @@ class GrandMarqueeCard extends HTMLElement {
         const style = color ? ` style="--item-color: rgb(${rgb(color)})"` : "";
         const icon = c.show_icons && m.icon ? `<ha-icon icon="${esc(m.icon)}"></ha-icon>` : "";
         const name = m.name ? `<span class="name">${esc(m.name)}:</span>` : "";
-        return `<span class="item"${style}>${icon}${name}<span class="text">${esc(m.text)}</span></span>${sep}`;
+        const tag = m.tag && c.show_tags !== false ? `<span class="tag">${esc(m.tag)}</span>` : "";
+        const pre = m.pre ? `<span class="pre">${esc(m.pre)}</span>` : "";
+        const sub = m.sub ? `<span class="sub">${esc(m.sub)}</span>` : "";
+        return `<span class="item"${style}>${tag}${icon}${name}${pre}<span class="text">${esc(m.text)}</span>${sub}</span>${sep}`;
       })
       .join("");
     this._track.innerHTML = `<div class="group">${this._groupHTML}</div>`;
@@ -563,12 +901,45 @@ function buildSchema(c) {
     ] },
   ];
 
+  const src = Array.isArray(c.sources) && c.sources.length ? c.sources : DEFAULT_SOURCES;
+  const has = (k) => src.includes(k);
+  const box = (min, max, unit) => ({ number: { min, max, step: 1, mode: "box", ...(unit ? { unit_of_measurement: unit } : {}) } });
+  const showFields = [
+    { name: "sources", selector: { select: { multiple: true, mode: "list", options: Object.entries(SOURCES).map(([value, label]) => ({ value, label })) } } },
+    ...(has("messages") ? [
+      { name: "entity", selector: { entity: { domain: "sensor" } } },
+      { name: "messages_text", selector: { text: { multiline: true } } },
+    ] : []),
+    ...(has("weather") ? [{ type: "grid", name: "", schema: [
+      { name: "weather_entity", selector: { entity: { domain: "weather" } } },
+      { name: "weather_tomorrow", selector: { boolean: {} } },
+    ] }] : []),
+    ...(has("news") ? [
+      { name: "news_topics", selector: { select: { multiple: true, mode: "dropdown", options: Object.entries(NEWS_TOPICS).map(([value, label]) => ({ value, label })) } } },
+      { type: "grid", name: "", schema: [
+        { name: "news_count", selector: box(1, 40) },
+        { name: "news_source", selector: { boolean: {} } },
+      ] },
+    ] : []),
+    ...(has("calendar") ? [
+      { name: "calendar_entities", selector: { entity: { domain: "calendar", multiple: true } } },
+      { type: "grid", name: "", schema: [
+        { name: "calendar_count", selector: box(1, 20) },
+        { name: "calendar_hours", selector: box(1, 168, "h") },
+      ] },
+    ] : []),
+    ...(has("todo") ? [
+      { name: "todo_entities", selector: { entity: { domain: "todo", multiple: true } } },
+      { name: "todo_count", selector: box(1, 20) },
+    ] : []),
+    ...(has("entities") ? [{ name: "entities", selector: { entity: { multiple: true } } }] : []),
+    { name: "show_tags", selector: { boolean: {} } },
+  ];
+
   return [
     { name: "title", selector: { text: {} } },
     { name: "title_icon", selector: { icon: {} } },
-    { name: "entity", selector: { entity: { domain: "sensor" } } },
-    { name: "messages_text", selector: { text: { multiline: true } } },
-    { name: "entities", selector: { entity: { multiple: true } } },
+    { type: "expandable", flatten: true, expanded: true, name: "show", title: "What to show", icon: "mdi:format-list-bulleted", schema: showFields },
     {
       type: "grid", name: "", schema: [
         { name: "speed", selector: { number: { min: 10, max: 300, step: 5, mode: "slider", unit_of_measurement: "px/s" } } },
@@ -619,6 +990,18 @@ const LABELS = {
   title: "Label (optional pill on the left)",
   title_icon: "Label icon",
   entity: "Message sensor",
+  sources: "Show these, in this order",
+  weather_entity: "Weather",
+  weather_tomorrow: "Also show tomorrow",
+  news_topics: "News topics (empty = all you turned on)",
+  news_count: "Headlines",
+  news_source: "Show the news source",
+  calendar_entities: "Calendars (empty = all)",
+  calendar_count: "Events",
+  calendar_hours: "Look ahead",
+  todo_entities: "To-do lists (empty = all)",
+  todo_count: "Items per list",
+  show_tags: "Show category tags (Weather, News, …)",
   messages_text: "Static messages (one per line)",
   entities: "Also scroll these entity states",
   speed: "Speed",
@@ -679,6 +1062,9 @@ class GrandMarqueeEditor extends HTMLElement {
     if (c.border_width === undefined) data.border_width = plain ? 0 : 1;
     if (c.reserve_space === undefined) data.reserve_space = c.position === "top";
     if (c.glow_strength === undefined) data.glow_strength = theme.glow_strength;
+    data.sources = Array.isArray(c.sources) && c.sources.length ? c.sources : DEFAULT_SOURCES;
+    const defaults = { weather_tomorrow: false, news_count: 8, news_source: true, calendar_count: 6, calendar_hours: 24, todo_count: 5, show_tags: true };
+    for (const [k, v] of Object.entries(defaults)) if (data[k] === undefined) data[k] = v;
     return data;
   }
 
@@ -719,6 +1105,10 @@ class GrandMarqueeEditor extends HTMLElement {
       if (!next.entities.length) delete next.entities;
     }
     if (next.entity === "" || next.entity === undefined) delete next.entity;
+    for (const k of ["news_topics", "calendar_entities", "todo_entities"]) {
+      if (Array.isArray(next[k]) && !next[k].length) delete next[k];
+    }
+    if (!next.weather_entity) delete next.weather_entity;
 
     this._config = next;
     this._form.schema = buildSchema({ ...DEFAULTS, ...next });

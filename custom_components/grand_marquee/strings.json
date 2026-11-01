@@ -15,17 +15,37 @@
       "name": "Add message",
       "description": "Add a message to the marquee. Re-using an id replaces that message.",
       "fields": {
-        "text": { "name": "Text", "description": "Message text." },
-        "icon": { "name": "Icon", "description": "Optional MDI icon." },
-        "color": { "name": "Color", "description": "Optional accent color (hex or r,g,b)." },
-        "duration": { "name": "Duration", "description": "Remove the message automatically after this long." },
-        "id": { "name": "ID", "description": "Optional id, so you can replace or remove it later." }
+        "text": {
+          "name": "Text",
+          "description": "Message text."
+        },
+        "icon": {
+          "name": "Icon",
+          "description": "Optional MDI icon."
+        },
+        "color": {
+          "name": "Color",
+          "description": "Optional accent color (hex or r,g,b)."
+        },
+        "duration": {
+          "name": "Duration",
+          "description": "Remove the message automatically after this long."
+        },
+        "id": {
+          "name": "ID",
+          "description": "Optional id, so you can replace or remove it later."
+        }
       }
     },
     "remove_message": {
       "name": "Remove message",
       "description": "Remove a message by id.",
-      "fields": { "id": { "name": "ID", "description": "Id of the message to remove." } }
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Id of the message to remove."
+        }
+      }
     },
     "clear_messages": {
       "name": "Clear messages",
@@ -34,7 +54,44 @@
     "set_messages": {
       "name": "Set messages",
       "description": "Replace all messages at once.",
-      "fields": { "messages": { "name": "Messages", "description": "List of strings or message objects." } }
+      "fields": {
+        "messages": {
+          "name": "Messages",
+          "description": "List of strings or message objects."
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "News for the marquee",
+        "description": "Pick the headlines the marquee's News source can show. Topics come from Google News in your Home Assistant language and country. You can also add any RSS or Atom feed, one address per line. Then choose which of these each marquee shows in its card settings.",
+        "data": {
+          "news_topics": "Topics",
+          "custom_feeds": "Extra feeds (one web address per line)",
+          "refresh_minutes": "Check for new headlines every",
+          "headlines_per_feed": "Headlines per topic or feed"
+        }
+      }
+    },
+    "error": {
+      "invalid_feed": "Each feed must be a full web address starting with http:// or https://."
+    }
+  },
+  "selector": {
+    "news_topics": {
+      "options": {
+        "top": "Top stories",
+        "world": "World",
+        "nation": "National",
+        "business": "Business",
+        "technology": "Technology",
+        "entertainment": "Entertainment",
+        "sports": "Sports",
+        "science": "Science",
+        "health": "Health"
+      }
     }
   }
 }

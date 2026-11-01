@@ -6,14 +6,14 @@
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-18BCF2.svg?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
-[![Version](https://img.shields.io/badge/version-1.0.1-6E56CF.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-6E56CF.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
 
 Beautiful design and ease of use. https://github.com/Degederon/grand-marquee
 
-Grand Marquee puts a rolling ticker of messages on your Home Assistant dashboard. It matches the look of [Glass Message Board](https://github.com/Degederon/GlassMessageBoard): frosted glass in any colour, or a plain solid bar if you prefer. Automations can post messages to it, live sensor values can scroll alongside them, and it can sit inside a dashboard or stay pinned to the top or bottom of the screen on a wall tablet.
+Grand Marquee puts a rolling ticker on your Home Assistant dashboard: your own messages, today's weather, the latest headlines, your calendar, to-do lists and more. It matches the look of [Glass Message Board](https://github.com/Degederon/GlassMessageBoard): frosted glass in any colour, or a plain solid bar if you prefer. Automations can post messages to it, live sensor values can scroll alongside them, and it can sit inside a dashboard or stay pinned to the top or bottom of the screen on a wall tablet.
 
 ## Contents
 
@@ -39,6 +39,7 @@ Grand Marquee puts a rolling ticker of messages on your Home Assistant dashboard
 | **Your colours** | Eighteen presets: six vivid ones (Frost, Aurora, Midnight, Rose, Ember, Light) and twelve professional palettes (Slate, Graphite, Navy, Harbor, Evergreen, Sage, Burgundy, Copper, Plum, Sand, Arctic, Monochrome). Colour pickers let you change the background, text, accent, edge and glow. |
 | **Your font** | Your Home Assistant theme's font, System, Serif, Monospace or Rounded, ten web fonts such as Poppins and Orbitron, or any font name you type. |
 | **Placement** | Inside a dashboard, or pinned to the top or bottom of the screen. Pinned bars line up with the dashboard, never covering the sidebar, and a top bar leaves room so it doesn't hide your cards. |
+| **Choose what it shows** | Any mix of messages, today's weather, news headlines by topic, calendar events, to-do lists, sunrise and sunset, the date and entity values, in the order you like. Small tags show which category each item is. |
 | **Messages from automations** | Add, replace, remove or clear messages with actions. Messages can have an icon, a colour and a time limit, and survive restarts. |
 | **Live values** | Scroll any entity's state, such as the outdoor temperature or the front door lock, next to your messages. |
 | **Touch friendly** | Tap to pause and resume on a tablet; hover to pause on a computer. |
@@ -78,6 +79,10 @@ All pictures show the marquee on a Home Assistant dashboard with example message
 </tr>
 <tr>
 <td width="50%" valign="top"><img src="https://raw.githubusercontent.com/Degederon/grand-marquee/main/docs/images/tour/11-phone.jpg" alt="It works on phones too. Here it's pinned to the bottom with the Aurora preset." width="100%"><br><sub>It works on phones too. Here it's pinned to the bottom with the Aurora preset.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/Degederon/grand-marquee/main/docs/images/tour/12-daily-briefing.jpg" alt="A daily briefing: the date, today's weather, your calendar, the shopping list and sunset, with category tags." width="100%"><br><sub>A daily briefing: the date, today's weather, your calendar, the shopping list and sunset, with category tags.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/Degederon/grand-marquee/main/docs/images/tour/13-news.jpg" alt="Latest headlines by topic, tagged and with their source, next to your own messages." width="100%"><br><sub>Latest headlines by topic, tagged and with their source, next to your own messages.</sub></td>
 <td width="50%"></td>
 </tr>
 </table>
@@ -86,14 +91,15 @@ All pictures show the marquee on a Home Assistant dashboard with example message
 
 A single installation provides two components:
 
-- **Integration** (`grand_marquee`): stores and expires messages, and provides actions and a sensor.
+- **Integration** (`grand_marquee`): stores and expires messages, fetches news headlines, and provides actions and sensors.
 - **Dashboard card** (`custom:grand-marquee`): the marquee itself, served by the integration and loaded on your dashboards.
 
 ## Requirements
 
 - Home Assistant **2024.11** or later. On **2026.11** and later, install through the built-in **Marketplace**; on earlier versions, use **HACS**.
 - A GitHub account, to add the repository to the Marketplace or HACS.
-- Internet access on the display, only if you choose one of the web fonts.
+- Internet access on Home Assistant, only for news headlines; on the display, only if you choose one of the web fonts.
+- For weather, calendar and to-do: any weather, calendar or to-do integration you already use in Home Assistant.
 
 ## Step-by-step setup
 
@@ -155,6 +161,21 @@ This happens automatically: the integration adds the marquee under **Settings �
 2. Choose **Grand Marquee: Add message**, type some text, and select **Perform action**.
 3. The message appears on the marquee straight away.
 
+### Part 6: Choose what it shows (optional)
+
+1. Edit the dashboard and open the marquee card.
+2. Under **What to show**, tick what you want: **Messages**, **Weather**, **News**, **Calendar**, **To-do lists**, **Sunrise & sunset**, **Date** or **Entity values**. Settings for each one appear when you tick it.
+3. Select **Save**.
+
+**For news**, first pick the topics Home Assistant should fetch:
+
+1. Go to **Settings → Devices & services → Grand Marquee** and select **Configure**.
+2. Tick the **Topics** you want (Top stories, World, National, Business, Technology, Entertainment, Sports, Science, Health). They come from Google News, in your Home Assistant language and country.
+3. Optionally paste the web address of any other news feed (RSS or Atom), one per line, under **Extra feeds**.
+4. Select **Submit**. Headlines appear within a minute and refresh every 30 minutes.
+
+Each marquee can then show all of those topics, or only some of them, under **News topics** in the card.
+
 ## Dashboard configuration
 
 Everything below can be set in the card editor. To edit it as YAML instead, open the card's **⋮** menu and choose **Edit in YAML**.
@@ -179,6 +200,14 @@ messages:
 
 | Option | Default | Description |
 |---|---|---|
+| `sources` | `[messages, entities]` | What to show, in this order: `messages`, `weather`, `news`, `calendar`, `todo`, `sun`, `date`, `entities`. |
+| `show_tags` | `true` | Show a small category tag (Weather, Tech, Calendar…) before items. |
+| `weather_entity` | first weather entity | The weather entity for the `weather` source. |
+| `weather_tomorrow` | `false` | Also show tomorrow's forecast. |
+| `news_topics` | all turned on | Which topics to show: `top`, `world`, `nation`, `business`, `technology`, `entertainment`, `sports`, `science`, `health`, `custom` (your extra feeds). |
+| `news_count`, `news_source` | 8, `true` | How many headlines, and whether to show where each one is from. |
+| `calendar_entities`, `calendar_count`, `calendar_hours` | all, 6, 24 | Which calendars, how many events, and how many hours ahead to look. |
+| `todo_entities`, `todo_count` | all, 5 | Which to-do lists, and how many items to name per list. |
 | `entity` | `sensor.grand_marquee_messages` | Where messages come from. Any entity with a `messages` attribute works; for other entities the state is shown. Set to `""` to turn off. |
 | `messages` | – | Messages that are always shown: text, or `{text, icon, color}`. |
 | `entities` | – | Entity states to scroll: an entity ID, or `{entity, name, icon, color}`. |
@@ -466,7 +495,46 @@ separator: ✦
 
 ### What it shows
 
-Messages from automations, plus live values from your entities.
+Pick any mix of messages, weather, news, calendar, to-do lists, sunrise and sunset, the date and entity values.
+
+#### A daily briefing
+
+A daily briefing: the date, today's weather, your calendar, the shopping list and sunset, with category tags.
+
+Put it first on the dashboard. Leave `weather_entity`, `calendar_entities` and `todo_entities` out to use all of them.
+
+```yaml
+type: custom:grand-marquee
+theme: navy
+position: top
+sources:
+- date
+- weather
+- calendar
+- todo
+- sun
+weather_tomorrow: true
+```
+
+#### Latest headlines
+
+Latest headlines by topic, tagged and with their source, next to your own messages.
+
+Turn the topics on first under **Settings → Devices & services → Grand Marquee → Configure**.
+
+```yaml
+type: custom:grand-marquee
+theme: graphite
+position: bottom
+sources:
+- news
+- messages
+news_topics:
+- top
+- technology
+- sports
+news_count: 6
+```
 
 #### Live values
 
@@ -509,6 +577,7 @@ entities:
 | Entity | Description |
 |---|---|
 | `sensor.grand_marquee_messages` | The number of messages. The `messages` attribute holds the list the marquee shows. |
+| `sensor.grand_marquee_news` | The number of headlines. The `headlines` attribute holds them, with their title, source, topic and link. Headlines aren't saved in your history. |
 
 ## Automation examples
 
@@ -581,6 +650,9 @@ Your browser hasn't loaded the marquee's display file. Work through these steps 
 | The font didn't change | Web fonts need internet access on the display. Check the tablet is online, or choose a font that isn't downloaded (theme, System, Serif, Monospace or Rounded). |
 | The colours look washed out on the glass style | The glass lets the background show through. Raise **Tint strength**, or switch **Style** to **Plain** for a solid colour. |
 | The marquee isn't moving | It may be paused: tap it once. If the device has **Reduce motion** turned on, the marquee stays still on purpose. |
+| Weather shows no high, low or chance of rain | Your weather integration doesn't provide a forecast. The current conditions still show. Pick a different entity under **Weather** if you have one with a forecast. |
+| No headlines appear | Check that topics are ticked under **Settings → Devices & services → Grand Marquee → Configure**, and that Home Assistant can reach the internet. If the marquee says **Turn on … news**, tick that topic there. Problems reading a feed are listed in **Settings → System → Logs**. |
+| Calendar or to-do items are missing | Only events in the next **Look ahead** hours and to-do items that aren't checked off are shown. The marquee checks for changes every 10 minutes and whenever the calendar or list changes. |
 | A message disappeared | It reached the `duration` it was given. Leave `duration` out to keep a message until it's removed. |
 | The Marketplace doesn't offer an update | Open **Grand Marquee** in the Marketplace, open the **⋮** menu and choose **Update information**. Updates appear once a new release is published on GitHub. |
 | The marquee still looks like the old version after an update | Restart Home Assistant, then hard-refresh the browser or reset the companion app's frontend cache. The integration updates the version number in your resources automatically. |
