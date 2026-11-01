@@ -1,7 +1,7 @@
 """Constants for Grand Marquee."""
 
 DOMAIN = "grand_marquee"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 STORAGE_KEY = f"{DOMAIN}.messages"
 STORAGE_VERSION = 1

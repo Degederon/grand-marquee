@@ -3,7 +3,7 @@
  * Shipped and auto-registered by the grand_marquee integration (can also be
  * added manually as a dashboard resource).
  */
-const GM_VERSION = "1.0.0";
+const GM_VERSION = "1.0.1";
 
 // `plain` is the solid background used when style: plain and no custom color is set.
 const THEMES = {
@@ -13,6 +13,20 @@ const THEMES = {
   rose:     { tint: [244, 114, 182], tint_opacity: 0.18, plain: [157, 23, 77],   text: [255, 241, 242], accent: [251, 191, 36],  border: [253, 164, 175], glow: [244, 114, 182], glow_strength: 0.35 },
   ember:    { tint: [249, 115, 22],  tint_opacity: 0.16, plain: [154, 52, 18],   text: [255, 247, 237], accent: [253, 224, 71],  border: [253, 186, 116], glow: [251, 146, 60],  glow_strength: 0.35 },
   light:    { tint: [255, 255, 255], tint_opacity: 0.55, plain: [248, 250, 252], text: [15, 23, 42],    accent: [37, 99, 235],   border: [203, 213, 225], glow: [147, 197, 253], glow_strength: 0.20 },
+
+  // Professional palettes: muted, high-contrast, low glow.
+  slate:     { tint: [51, 65, 85],    tint_opacity: 0.55, plain: [51, 65, 85],    text: [241, 245, 249], accent: [56, 189, 248],  border: [148, 163, 184], glow: [100, 116, 139], glow_strength: 0.15 },
+  graphite:  { tint: [23, 23, 23],    tint_opacity: 0.65, plain: [28, 28, 30],    text: [245, 245, 245], accent: [245, 158, 11],  border: [82, 82, 91],    glow: [0, 0, 0],       glow_strength: 0.10 },
+  navy:      { tint: [23, 37, 84],    tint_opacity: 0.60, plain: [23, 37, 84],    text: [239, 246, 255], accent: [212, 175, 55],  border: [96, 115, 170],  glow: [37, 99, 235],   glow_strength: 0.18 },
+  harbor:    { tint: [12, 74, 110],   tint_opacity: 0.55, plain: [12, 74, 110],   text: [240, 249, 255], accent: [103, 232, 249], border: [125, 211, 252], glow: [14, 165, 233],  glow_strength: 0.18 },
+  evergreen: { tint: [20, 83, 45],    tint_opacity: 0.58, plain: [20, 83, 45],    text: [240, 253, 244], accent: [190, 242, 100], border: [134, 239, 172], glow: [34, 197, 94],   glow_strength: 0.15 },
+  sage:      { tint: [94, 117, 98],   tint_opacity: 0.55, plain: [84, 104, 88],   text: [247, 248, 240], accent: [245, 230, 190], border: [190, 205, 185], glow: [134, 160, 138], glow_strength: 0.12 },
+  burgundy:  { tint: [94, 23, 45],    tint_opacity: 0.60, plain: [104, 25, 49],   text: [255, 241, 242], accent: [232, 180, 150], border: [190, 120, 140], glow: [159, 18, 57],   glow_strength: 0.18 },
+  copper:    { tint: [87, 52, 30],    tint_opacity: 0.60, plain: [92, 56, 33],    text: [255, 247, 237], accent: [217, 119, 6],   border: [180, 120, 80],  glow: [194, 101, 42],  glow_strength: 0.18 },
+  plum:      { tint: [59, 34, 86],    tint_opacity: 0.58, plain: [59, 34, 86],    text: [245, 243, 255], accent: [196, 181, 253], border: [167, 139, 250], glow: [124, 58, 237],  glow_strength: 0.18 },
+  sand:      { tint: [245, 235, 220], tint_opacity: 0.80, plain: [240, 230, 212], text: [41, 37, 36],    accent: [180, 83, 9],    border: [214, 197, 170], glow: [217, 180, 130], glow_strength: 0.12 },
+  arctic:    { tint: [241, 245, 249], tint_opacity: 0.80, plain: [236, 242, 248], text: [15, 23, 42],    accent: [30, 64, 175],   border: [203, 213, 225], glow: [148, 163, 184], glow_strength: 0.12 },
+  mono:      { tint: [0, 0, 0],       tint_opacity: 0.70, plain: [0, 0, 0],       text: [255, 255, 255], accent: [255, 255, 255], border: [115, 115, 115], glow: [0, 0, 0],       glow_strength: 0.0 },
 };
 
 // Font choices. `google` fonts are fetched from Google Fonts on first use;
@@ -151,6 +165,7 @@ class GrandMarqueeCard extends HTMLElement {
 
   connectedCallback() {
     if (document.fonts) document.fonts.addEventListener("loadingdone", this._onFonts);
+    if (this._config) this._applyPosition();
     this._scheduleMeasure();
   }
 
@@ -160,6 +175,7 @@ class GrandMarqueeCard extends HTMLElement {
     this._ro.disconnect();
     this._observed = false;
     if (document.fonts) document.fonts.removeEventListener("loadingdone", this._onFonts);
+    this._trackArea(false);
   }
 
   /* ----- colors ----- */
@@ -202,12 +218,19 @@ class GrandMarqueeCard extends HTMLElement {
           --gm-font: ${num(c.font_size, 20)}px;
           --gm-gap: ${num(c.gap, 40)}px;
         }
-        :host([fixed]) {
-          position: fixed; left: ${num(c.offset, 12)}px; right: ${num(c.offset, 12)}px;
-          z-index: 7; pointer-events: auto;
+        /* Pinned: the bar floats at the edge of the dashboard area (not over the
+           sidebar). The card itself can keep a gap where it sits so the bar
+           doesn't cover the cards beneath it. */
+        :host([fixed]) { height: 0; }
+        :host([fixed][reserve]) { height: var(--gm-height); }
+        :host([fixed]) ha-card {
+          position: fixed; z-index: 7; pointer-events: auto;
+          left: calc(var(--gm-area-left, 0px) + ${num(c.offset, 12)}px);
+          right: calc(var(--gm-area-right, 0px) + ${num(c.offset, 12)}px);
+          width: auto;
         }
-        :host([fixed="top"]) { top: calc(var(--header-height, 56px) + ${num(c.offset, 12)}px); }
-        :host([fixed="bottom"]) { bottom: calc(env(safe-area-inset-bottom, 0px) + ${num(c.offset, 12)}px); }
+        :host([fixed="top"]) ha-card { top: calc(var(--header-height, 56px) + ${num(c.offset, 12)}px); }
+        :host([fixed="bottom"]) ha-card { bottom: calc(env(safe-area-inset-bottom, 0px) + ${num(c.offset, 12)}px); }
         :host([hidden-empty]) { display: none; }
         ha-card {
           display: block; width: 100%; min-width: 0; overflow: visible;
@@ -326,10 +349,43 @@ class GrandMarqueeCard extends HTMLElement {
   }
 
   _applyPosition() {
-    const pos = this._config && this._config.position;
+    const c = this._config;
+    const pos = c && c.position;
     const editing = this._editMode || this._preview;
-    if ((pos === "top" || pos === "bottom") && !editing) this.setAttribute("fixed", pos);
+    const pinned = (pos === "top" || pos === "bottom") && !editing;
+    if (pinned) this.setAttribute("fixed", pos);
     else this.removeAttribute("fixed");
+    // Top bars keep a gap in the dashboard by default; bottom bars don't.
+    const reserve = c && (c.reserve_space !== undefined ? c.reserve_space : pos === "top");
+    if (pinned && reserve) this.setAttribute("reserve", "");
+    else this.removeAttribute("reserve");
+    this._trackArea(pinned);
+  }
+
+  // Line a pinned bar up with the dashboard area, so it never covers the sidebar.
+  _findArea() {
+    let node = this;
+    while (node) {
+      const tag = node.localName || "";
+      if (tag === "hui-view" || tag === "hui-panel-view" || /^hui-.*-view$/.test(tag)) return node;
+      node = node.parentNode || (node.getRootNode && node.getRootNode().host) || null;
+    }
+    return null;
+  }
+
+  _trackArea(on) {
+    if (this._areaRO) { this._areaRO.disconnect(); this._areaRO = null; }
+    window.removeEventListener("resize", this._areaHandler || (() => {}));
+    if (!on || !this.isConnected) return;
+    const area = this._findArea();
+    this._areaHandler = () => {
+      const r = area ? area.getBoundingClientRect() : null;
+      this.style.setProperty("--gm-area-left", r ? `${Math.max(0, r.left)}px` : "0px");
+      this.style.setProperty("--gm-area-right", r ? `${Math.max(0, window.innerWidth - r.right)}px` : "0px");
+    };
+    this._areaHandler();
+    window.addEventListener("resize", this._areaHandler);
+    if (area) { this._areaRO = new ResizeObserver(this._areaHandler); this._areaRO.observe(area); }
   }
 
   /* ----- data ----- */
@@ -460,7 +516,12 @@ class GrandMarqueeCard extends HTMLElement {
 }
 
 /* ---------- visual editor ---------- */
-const THEME_OPTIONS = Object.keys(THEMES).map((k) => ({ value: k, label: k[0].toUpperCase() + k.slice(1) }));
+const THEME_LABELS = { mono: "Monochrome" };
+const PRO_THEMES = ["slate", "graphite", "navy", "harbor", "evergreen", "sage", "burgundy", "copper", "plum", "sand", "arctic", "mono"];
+const THEME_OPTIONS = Object.keys(THEMES).map((k) => ({
+  value: k,
+  label: (THEME_LABELS[k] || k[0].toUpperCase() + k.slice(1)) + (PRO_THEMES.includes(k) ? " · Professional" : ""),
+}));
 const COLOR_KEYS = ["tint_color", "text_color", "accent_color", "border_color", "glow_color"];
 
 const FONT_OPTIONS = Object.entries(FONTS).map(([value, f]) => ({ value, label: f.label }));
@@ -537,6 +598,7 @@ function buildSchema(c) {
             { value: "bottom", label: "Pinned to bottom of screen" },
           ] } } },
           { name: "offset", selector: { number: { min: 0, max: 80, step: 1, mode: "box", unit_of_measurement: "px" } } },
+          ...(c.position === "top" || c.position === "bottom" ? [{ name: "reserve_space", selector: { boolean: {} } }] : []),
           { name: "height", selector: { number: { min: 28, max: 160, step: 2, mode: "box", unit_of_measurement: "px" } } },
           { name: "border_radius", selector: { number: { min: 0, max: 80, step: 1, mode: "box", unit_of_measurement: "px" } } },
           { name: "gap", selector: { number: { min: 0, max: 200, step: 2, mode: "box", unit_of_measurement: "px" } } },
@@ -577,6 +639,7 @@ const LABELS = {
   blur: "Background blur",
   position: "Placement",
   offset: "Edge offset",
+  reserve_space: "Leave room so it doesn't cover cards",
   height: "Height",
   font_size: "Font size",
   font_weight: "Font weight",
@@ -614,6 +677,7 @@ class GrandMarqueeEditor extends HTMLElement {
     COLOR_KEYS.forEach((k) => (data[k] = toRGB(c[k], theme[map[k]])));
     if (c.tint_opacity === undefined) data.tint_opacity = plain ? 1 : theme.tint_opacity;
     if (c.border_width === undefined) data.border_width = plain ? 0 : 1;
+    if (c.reserve_space === undefined) data.reserve_space = c.position === "top";
     if (c.glow_strength === undefined) data.glow_strength = theme.glow_strength;
     return data;
   }
