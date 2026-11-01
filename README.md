@@ -7,6 +7,7 @@
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-18BCF2.svg?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 [![Version](https://img.shields.io/badge/version-1.2.0-6E56CF.svg)](CHANGELOG.md)
+[![Languages](https://img.shields.io/badge/languages-English%20%7C%20Deutsch%20%7C%20Espa%C3%B1ol%20%7C%20Fran%C3%A7ais-2E9E6B.svg)](#languages)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
@@ -14,6 +15,8 @@
 Beautiful design and ease of use. https://github.com/Degederon/grand-marquee
 
 Grand Marquee puts a rolling ticker on your Home Assistant dashboard: your own messages, today's weather and alerts, the latest headlines, sports scores, your calendar, countdowns, to-do lists, notes from your message board and more. It matches the look of [Glass Message Board](https://github.com/Degederon/GlassMessageBoard): frosted glass in any colour, or a plain solid bar if you prefer. Automations can post messages to it, live sensor values can scroll alongside them, and it can sit inside a dashboard or stay pinned to the top or bottom of the screen on a wall tablet.
+
+**Languages:** English, German (Deutsch), Spanish (Español) and French (Français). The card, its settings and what it says follow your Home Assistant language.
 
 ## Contents
 
@@ -26,6 +29,7 @@ Grand Marquee puts a rolling ticker on your Home Assistant dashboard: your own m
 - [Actions](#actions)
 - [Entities](#entities)
 - [Automation examples](#automation-examples)
+- [Languages](#languages)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -809,6 +813,21 @@ triggers:
 actions:
   - action: grand_marquee.clear_messages
 ```
+
+## Languages
+
+Grand Marquee speaks four languages. Other languages show in English.
+
+| Language | Setup and options | Card editor | What scrolls by | Weather summary sensor | News headlines |
+|---|---|---|---|---|---|
+| English | ✓ | ✓ | ✓ | ✓ | ✓ |
+| German (Deutsch) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Spanish (Español) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| French (Français) | ✓ | ✓ | ✓ | ✓ | ✓ |
+
+- **What scrolls by** covers the words the marquee adds itself: category tags, weather words, countdowns ("in 3 days"), sunrise and sunset, and "Final" or "Live" on sports scores. Your own messages show exactly as you write them.
+- **The card and its editor** follow the language in your Home Assistant profile: select your name at the bottom of the sidebar and set **Language**.
+- **Setup, the weather summary sensor and news** follow Home Assistant's own language, under **Settings → System → General**. News comes from Google News in that language and your country.
 
 ## Troubleshooting
 
