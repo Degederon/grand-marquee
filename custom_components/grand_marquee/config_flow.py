@@ -9,6 +9,8 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
+    EntitySelector,
+    EntitySelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -21,11 +23,16 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_CUSTOM_FEEDS,
+    CONF_KEYWORDS,
     CONF_NEWS_TOPICS,
     CONF_PER_FEED,
     CONF_REFRESH_MINUTES,
+    CONF_SPORTS_LEAGUES,
+    CONF_SPORTS_TEAMS,
+    CONF_WEATHER_ENTITY,
     DOMAIN,
 )
+from .sports import LEAGUES
 from .news import DEFAULT_PER_FEED, DEFAULT_REFRESH_MINUTES, DEFAULT_TOPICS, TOPICS
 
 
@@ -46,7 +53,7 @@ class GrandMarqueeConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class GrandMarqueeOptionsFlow(OptionsFlow):
-    """News topics and feeds for the marquee's News source."""
+    """News topics, keywords and feeds, sports to follow, and the weather summary's entity."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
@@ -62,7 +69,11 @@ class GrandMarqueeOptionsFlow(OptionsFlow):
                 return self.async_create_entry(
                     data={
                         CONF_NEWS_TOPICS: user_input.get(CONF_NEWS_TOPICS, []),
+                        CONF_KEYWORDS: _lines(user_input.get(CONF_KEYWORDS, "")),
                         CONF_CUSTOM_FEEDS: feeds,
+                        CONF_SPORTS_LEAGUES: user_input.get(CONF_SPORTS_LEAGUES, []),
+                        CONF_SPORTS_TEAMS: _lines(user_input.get(CONF_SPORTS_TEAMS, "")),
+                        **({CONF_WEATHER_ENTITY: user_input[CONF_WEATHER_ENTITY]} if user_input.get(CONF_WEATHER_ENTITY) else {}),
                         CONF_REFRESH_MINUTES: int(user_input[CONF_REFRESH_MINUTES]),
                         CONF_PER_FEED: int(user_input[CONF_PER_FEED]),
                     }
@@ -72,7 +83,11 @@ class GrandMarqueeOptionsFlow(OptionsFlow):
         opts = self.config_entry.options
         current = {
             CONF_NEWS_TOPICS: opts.get(CONF_NEWS_TOPICS, DEFAULT_TOPICS),
+            CONF_KEYWORDS: "\n".join(opts.get(CONF_KEYWORDS, [])),
             CONF_CUSTOM_FEEDS: "\n".join(opts.get(CONF_CUSTOM_FEEDS, [])),
+            CONF_SPORTS_LEAGUES: opts.get(CONF_SPORTS_LEAGUES, []),
+            CONF_SPORTS_TEAMS: "\n".join(opts.get(CONF_SPORTS_TEAMS, [])),
+            CONF_WEATHER_ENTITY: opts.get(CONF_WEATHER_ENTITY),
             CONF_REFRESH_MINUTES: opts.get(CONF_REFRESH_MINUTES, DEFAULT_REFRESH_MINUTES),
             CONF_PER_FEED: opts.get(CONF_PER_FEED, DEFAULT_PER_FEED),
         }
@@ -90,6 +105,9 @@ class GrandMarqueeOptionsFlow(OptionsFlow):
                         translation_key="news_topics",
                     )
                 ),
+                vol.Optional(CONF_KEYWORDS, default=values.get(CONF_KEYWORDS, "")): TextSelector(
+                    TextSelectorConfig(multiline=True)
+                ),
                 vol.Optional(CONF_CUSTOM_FEEDS, default=values.get(CONF_CUSTOM_FEEDS, "")): TextSelector(
                     TextSelectorConfig(multiline=True)
                 ),
@@ -101,5 +119,30 @@ class GrandMarqueeOptionsFlow(OptionsFlow):
                 vol.Required(CONF_PER_FEED, default=values.get(CONF_PER_FEED, DEFAULT_PER_FEED)): NumberSelector(
                     NumberSelectorConfig(min=1, max=30, step=1, mode=NumberSelectorMode.BOX)
                 ),
+                vol.Optional(CONF_SPORTS_LEAGUES, default=values.get(CONF_SPORTS_LEAGUES, [])): SelectSelector(
+                    SelectSelectorConfig(
+                        options=list(LEAGUES),
+                        multiple=True,
+                        mode=SelectSelectorMode.DROPDOWN,
+                        translation_key="sports_leagues",
+                    )
+                ),
+                vol.Optional(CONF_SPORTS_TEAMS, default=values.get(CONF_SPORTS_TEAMS, "")): TextSelector(
+                    TextSelectorConfig(multiline=True)
+                ),
+                **{
+                    (
+                        vol.Optional(CONF_WEATHER_ENTITY, description={"suggested_value": values.get(CONF_WEATHER_ENTITY)})
+                    ): EntitySelector(EntitySelectorConfig(domain="weather"))
+                },
             }
         )
+
+
+def _lines(text: str) -> list[str]:
+    """One entry per line; commas also separate entries."""
+    out: list[str] = []
+    for line in str(text or "").replace(",", "\n").splitlines():
+        if line.strip() and line.strip() not in out:
+            out.append(line.strip())
+    return out

@@ -1,7 +1,7 @@
 """Constants for Grand Marquee."""
 
 DOMAIN = "grand_marquee"
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 STORAGE_KEY = f"{DOMAIN}.messages"
 STORAGE_VERSION = 1
@@ -29,3 +29,9 @@ CONF_NEWS_TOPICS = "news_topics"
 CONF_CUSTOM_FEEDS = "custom_feeds"
 CONF_REFRESH_MINUTES = "refresh_minutes"
 CONF_PER_FEED = "headlines_per_feed"
+CONF_KEYWORDS = "news_keywords"
+CONF_SPORTS_LEAGUES = "sports_leagues"
+CONF_SPORTS_TEAMS = "sports_teams"
+CONF_WEATHER_ENTITY = "weather_entity"
+ATTR_URGENT = "urgent"
+MANUFACTURER = "Degederon"

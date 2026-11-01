@@ -6,14 +6,14 @@
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-18BCF2.svg?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
-[![Version](https://img.shields.io/badge/version-1.1.0-6E56CF.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.0-6E56CF.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 </div>
 
 Beautiful design and ease of use. https://github.com/Degederon/grand-marquee
 
-Grand Marquee puts a rolling ticker on your Home Assistant dashboard: your own messages, today's weather, the latest headlines, your calendar, to-do lists and more. It matches the look of [Glass Message Board](https://github.com/Degederon/GlassMessageBoard): frosted glass in any colour, or a plain solid bar if you prefer. Automations can post messages to it, live sensor values can scroll alongside them, and it can sit inside a dashboard or stay pinned to the top or bottom of the screen on a wall tablet.
+Grand Marquee puts a rolling ticker on your Home Assistant dashboard: your own messages, today's weather and alerts, the latest headlines, sports scores, your calendar, countdowns, to-do lists, notes from your message board and more. It matches the look of [Glass Message Board](https://github.com/Degederon/GlassMessageBoard): frosted glass in any colour, or a plain solid bar if you prefer. Automations can post messages to it, live sensor values can scroll alongside them, and it can sit inside a dashboard or stay pinned to the top or bottom of the screen on a wall tablet.
 
 ## Contents
 
@@ -39,7 +39,12 @@ Grand Marquee puts a rolling ticker on your Home Assistant dashboard: your own m
 | **Your colours** | Eighteen presets: six vivid ones (Frost, Aurora, Midnight, Rose, Ember, Light) and twelve professional palettes (Slate, Graphite, Navy, Harbor, Evergreen, Sage, Burgundy, Copper, Plum, Sand, Arctic, Monochrome). Colour pickers let you change the background, text, accent, edge and glow. |
 | **Your font** | Your Home Assistant theme's font, System, Serif, Monospace or Rounded, ten web fonts such as Poppins and Orbitron, or any font name you type. |
 | **Placement** | Inside a dashboard, or pinned to the top or bottom of the screen. Pinned bars line up with the dashboard, never covering the sidebar, and a top bar leaves room so it doesn't hide your cards. |
-| **Choose what it shows** | Any mix of messages, today's weather, news headlines by topic, calendar events, to-do lists, sunrise and sunset, the date and entity values, in the order you like. Small tags show which category each item is. |
+| **Choose what it shows** | Any mix of messages, weather alerts, today's weather, news by topic or keyword, sports scores, calendar events, countdowns, to-do lists, Glass Message Board notes, who's home, the commute, sunrise and sunset, the date and entity values, in the order you like. Small tags show which category each item is, in a colour you choose. |
+| **Urgent items** | Urgent messages and weather alerts take over the bar in red for a few seconds, then join the scroll. Alerts always come first. |
+| **Scroll or flip** | Glide continuously, or show one item at a time with a fade or slide. |
+| **Time of day** | Change what's shown, the colours or anything else by time of day, or hide the marquee during quiet hours. |
+| **Tap actions** | Tap a headline to open the article, tap a message to remove it, or tap to pause. |
+| **Your language** | The card, its settings and what it says are in English, Spanish, French and German, following your Home Assistant language. |
 | **Messages from automations** | Add, replace, remove or clear messages with actions. Messages can have an icon, a colour and a time limit, and survive restarts. |
 | **Live values** | Scroll any entity's state, such as the outdoor temperature or the front door lock, next to your messages. |
 | **Touch friendly** | Tap to pause and resume on a tablet; hover to pause on a computer. |
@@ -83,6 +88,14 @@ All pictures show the marquee on a Home Assistant dashboard with example message
 </tr>
 <tr>
 <td width="50%" valign="top"><img src="https://raw.githubusercontent.com/Degederon/grand-marquee/main/docs/images/tour/13-news.jpg" alt="Latest headlines by topic, tagged and with their source, next to your own messages." width="100%"><br><sub>Latest headlines by topic, tagged and with their source, next to your own messages.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/Degederon/grand-marquee/main/docs/images/tour/14-urgent.jpg" alt="Urgent items take over the bar in red for a few seconds, then join the scroll. Weather alerts always come first." width="100%"><br><sub>Urgent items take over the bar in red for a few seconds, then join the scroll. Weather alerts always come first.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/Degederon/grand-marquee/main/docs/images/tour/15-sports.jpg" alt="Live scores, tonight's games and final results for the teams you follow, with news about them." width="100%"><br><sub>Live scores, tonight's games and final results for the teams you follow, with news about them.</sub></td>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/Degederon/grand-marquee/main/docs/images/tour/16-flip.jpg" alt="Flip mode shows one item at a time with a fade or slide. Here: notes from Glass Message Board." width="100%"><br><sub>Flip mode shows one item at a time with a fade or slide. Here: notes from Glass Message Board.</sub></td>
+</tr>
+<tr>
+<td width="50%" valign="top"><img src="https://raw.githubusercontent.com/Degederon/grand-marquee/main/docs/images/tour/17-home-life.jpg" alt="Countdowns to dates and calendar events, who's home, and the drive to work." width="100%"><br><sub>Countdowns to dates and calendar events, who's home, and the drive to work.</sub></td>
 <td width="50%"></td>
 </tr>
 </table>
@@ -91,14 +104,15 @@ All pictures show the marquee on a Home Assistant dashboard with example message
 
 A single installation provides two components:
 
-- **Integration** (`grand_marquee`): stores and expires messages, fetches news headlines, and provides actions and sensors.
+- **Integration** (`grand_marquee`): stores and expires messages, fetches news and sports scores, summarises the weather, and provides actions and sensors.
 - **Dashboard card** (`custom:grand-marquee`): the marquee itself, served by the integration and loaded on your dashboards.
 
 ## Requirements
 
 - Home Assistant **2024.11** or later. On **2026.11** and later, install through the built-in **Marketplace**; on earlier versions, use **HACS**.
 - A GitHub account, to add the repository to the Marketplace or HACS.
-- Internet access on Home Assistant, only for news headlines; on the display, only if you choose one of the web fonts.
+- Internet access on Home Assistant, only for news and sports; on the display, only if you choose one of the web fonts.
+- For message board notes: [Glass Message Board](https://github.com/Degederon/GlassMessageBoard).
 - For weather, calendar and to-do: any weather, calendar or to-do integration you already use in Home Assistant.
 
 ## Step-by-step setup
@@ -164,17 +178,39 @@ This happens automatically: the integration adds the marquee under **Settings �
 ### Part 6: Choose what it shows (optional)
 
 1. Edit the dashboard and open the marquee card.
-2. Under **What to show**, tick what you want: **Messages**, **Weather**, **News**, **Calendar**, **To-do lists**, **Sunrise & sunset**, **Date** or **Entity values**. Settings for each one appear when you tick it.
+2. Under **What to show**, tick what you want. Settings for each one appear when you tick it:
+
+   | Source | Shows |
+   |---|---|
+   | **Messages** | Messages from automations and any you type in. |
+   | **Weather alerts** | Warnings from alert entities you pick (for example Meteoalarm or NWS alerts). Always first, in red. |
+   | **Weather** | Today's conditions, the temperature now, the high and low and the chance of rain. |
+   | **News** | Headlines by topic or keyword. |
+   | **Sports scores** | Live scores, upcoming games and final results. |
+   | **Calendar** | Upcoming events. |
+   | **Countdowns** | "Christmas in 54 days", from dates you type in or events in a calendar. |
+   | **To-do lists** | Open items from your to-do and shopping lists. |
+   | **Message board notes** | Notes from Glass Message Board, pinned ones first. |
+   | **Who's home** | Where each person is. |
+   | **Commute** | Travel time sensors, such as Waze or Google travel time. |
+   | **Sunrise & sunset**, **Date**, **Entity values** | As named. |
+
 3. Select **Save**.
 
-**For news**, first pick the topics Home Assistant should fetch:
+**For news, sports and the weather summary**, first tell Home Assistant what to fetch:
 
 1. Go to **Settings → Devices & services → Grand Marquee** and select **Configure**.
-2. Tick the **Topics** you want (Top stories, World, National, Business, Technology, Entertainment, Sports, Science, Health). They come from Google News, in your Home Assistant language and country.
-3. Optionally paste the web address of any other news feed (RSS or Atom), one per line, under **Extra feeds**.
-4. Select **Submit**. Headlines appear within a minute and refresh every 30 minutes.
+2. Tick the **News topics** you want (Top stories, World, National, Business, Technology, Entertainment, Sports, Science, Health). They come from Google News, in your Home Assistant language and country.
+3. Under **News about keywords**, add anything you want news about, one per line: your team, your town, a hobby. Each keyword becomes its own topic.
+4. Optionally paste the web address of any other news feed (RSS or Atom), one per line, under **Extra news feeds**.
+5. Under **Sports leagues to follow**, pick leagues (NFL, NBA, MLB, NHL, MLS, Premier League and more). Under **Teams to follow**, add team names or abbreviations, one per line, or leave it empty for every game.
+6. Optionally pick the **Weather** entity for the weather summary sensor.
+7. Select **Submit**. Headlines and scores appear within a minute.
 
-Each marquee can then show all of those topics, or only some of them, under **News topics** in the card.
+Each marquee can then show all of those, or only some, under **News topics** and **Leagues** in the card.
+
+> [!NOTE]
+> Sports scores come from ESPN's public scoreboard data. It's free and needs no account, but it isn't an official service, so it could change without notice.
 
 ## Dashboard configuration
 
@@ -200,11 +236,25 @@ messages:
 
 | Option | Default | Description |
 |---|---|---|
-| `sources` | `[messages, entities]` | What to show, in this order: `messages`, `weather`, `news`, `calendar`, `todo`, `sun`, `date`, `entities`. |
+| `sources` | `[messages, entities]` | What to show, in this order: `messages`, `alerts`, `weather`, `news`, `sports`, `calendar`, `countdown`, `todo`, `board`, `people`, `travel`, `sun`, `date`, `entities`. Alerts always come first. |
 | `show_tags` | `true` | Show a small category tag (Weather, Tech, Calendar…) before items. |
 | `weather_entity` | first weather entity | The weather entity for the `weather` source. |
 | `weather_tomorrow` | `false` | Also show tomorrow's forecast. |
-| `news_topics` | all turned on | Which topics to show: `top`, `world`, `nation`, `business`, `technology`, `entertainment`, `sports`, `science`, `health`, `custom` (your extra feeds). |
+| `news_topics` | all turned on | Which topics to show: `top`, `world`, `nation`, `business`, `technology`, `entertainment`, `sports`, `science`, `health`, `custom` (your extra feeds), or a keyword topic such as `kw:tampa-bay-lightning`. |
+| `sports_leagues`, `sports_count` | all you follow, 8 | Which leagues to show (`nfl`, `ncaaf`, `nba`, `wnba`, `ncaab`, `mlb`, `nhl`, `mls`, `epl`, `laliga`, `ucl`), and how many games. |
+| `alerts_entities`, `alerts_urgent` | –, `true` | Alert entities to watch, and whether new alerts take over the bar. |
+| `countdowns` | – | A list of `{name, date, icon}`. `date` is `MM-DD` (every year) or `YYYY-MM-DD` (once). In the editor, type one per line, such as `Christmas: 12-25`. |
+| `countdown_calendars`, `countdown_days` | –, 90 | Also count down to events in these calendars; only show countdowns this many days ahead. |
+| `board_count`, `board_drawings` | 8, `true` | How many Glass Message Board notes, and whether to include drawings. |
+| `people_entities` | all | Which people to show under Who's home. |
+| `travel_entities` | – | Travel time sensors to show under Commute. |
+| `<source>_color` | preset accent (`alerts`: red) | A colour for each category's icon and tag, for example `news_color: "#e2e8f0"` or `weather_color: [125, 211, 252]`. |
+| `mode` | `scroll` | `scroll`, or `flip` to show one item at a time. |
+| `flip_seconds`, `flip_effect` | 5, `fade` | How long each item shows in flip mode, and `fade` or `slide`. Long items glide across before the next one. |
+| `urgent_seconds`, `urgent_repeat` | 8, 0 | How long urgent items take over the bar, and how often (minutes) to repeat them; 0 shows each one once. |
+| `open_links`, `dismiss_on_tap` | `true`, `false` | Tap a headline to open it; tap a message to remove it. |
+| `schedule` | – | Different settings by time of day. See [Time of day and quiet hours](#time-of-day-and-quiet-hours). |
+| `opacity` | 1 | Make the whole marquee more see-through, from 0.1 to 1. |
 | `news_count`, `news_source` | 8, `true` | How many headlines, and whether to show where each one is from. |
 | `calendar_entities`, `calendar_count`, `calendar_hours` | all, 6, 24 | Which calendars, how many events, and how many hours ahead to look. |
 | `todo_entities`, `todo_count` | all, 5 | Which to-do lists, and how many items to name per list. |
@@ -228,6 +278,27 @@ messages:
 | `fade_edges`, `pause_on_hover`, `show_icons` | `true` | |
 | `tap_to_pause` | `true` | Tap the marquee to pause and resume. |
 | `hide_when_empty`, `empty_text` | `false`, `No messages` | |
+
+### Time of day and quiet hours
+
+Add a `schedule` in the card's YAML to change any setting by time of day. The first block whose time matches wins; outside every block, the card's normal settings apply. Blocks can run past midnight, and `days` is optional.
+
+```yaml
+type: custom:grand-marquee
+sources: [news, sports, messages]
+schedule:
+  - from: "06:00"
+    to: "09:00"
+    sources: [date, weather, calendar, todo, messages]   # morning briefing
+    theme: arctic
+  - from: "22:00"
+    to: "06:30"
+    hide: true                                           # quiet hours
+  - from: "17:00"
+    to: "22:00"
+    days: [sat, sun]
+    opacity: 0.6
+```
 
 > [!TIP]
 > The web fonts are downloaded from Google Fonts the first time the marquee is shown. Without internet access the marquee uses the system font instead. The theme, System, Serif, Monospace and Rounded fonts never download anything.
@@ -495,7 +566,7 @@ separator: ✦
 
 ### What it shows
 
-Pick any mix of messages, weather, news, calendar, to-do lists, sunrise and sunset, the date and entity values.
+Pick any mix of messages, weather, news, sports, calendar, countdowns, to-do lists, board notes, who's home, the commute, sunrise and sunset, the date and entity values.
 
 #### A daily briefing
 
@@ -536,6 +607,46 @@ news_topics:
 news_count: 6
 ```
 
+#### Sports scores
+
+Live scores, tonight's games and final results for the teams you follow, with news about them.
+
+Pick leagues and teams under **Settings → Devices & services → Grand Marquee → Configure**.
+
+```yaml
+type: custom:grand-marquee
+theme: slate
+position: bottom
+sources:
+- sports
+- news
+news_topics:
+- kw:tampa-bay-lightning
+- sports
+news_count: 3
+```
+
+#### Countdowns, who's home and the commute
+
+Countdowns to dates and calendar events, who's home, and the drive to work.
+
+```yaml
+type: custom:grand-marquee
+theme: sage
+position: bottom
+sources:
+- countdown
+- people
+- travel
+countdowns:
+- name: Christmas
+  date: 12-25
+countdown_calendars:
+- calendar.birthdays
+travel_entities:
+- sensor.commute_to_work
+```
+
 #### Live values
 
 Live values scroll alongside your messages: the temperature, the front door, the washer.
@@ -551,6 +662,44 @@ entities:
 - sensor.washer_status
 - entity: sensor.energy_today
   name: Energy
+```
+
+### Alerts and display
+
+Urgent items, weather alerts and showing one item at a time.
+
+#### Urgent items and weather alerts
+
+Urgent items take over the bar in red for a few seconds, then join the scroll. Weather alerts always come first.
+
+Send your own urgent message with `grand_marquee.add_message` and `urgent: true`.
+
+```yaml
+type: custom:grand-marquee
+theme: graphite
+position: top
+sources:
+- alerts
+- weather
+- messages
+alerts_entities:
+- binary_sensor.storm_warning
+urgent_seconds: 10
+```
+
+#### One at a time
+
+Flip mode shows one item at a time with a fade or slide. Here: notes from Glass Message Board.
+
+```yaml
+type: custom:grand-marquee
+theme: harbor
+mode: flip
+flip_effect: slide
+sources:
+- board
+height: 72
+font_size: 26
 ```
 
 ## Actions
@@ -571,6 +720,7 @@ entities:
 | `color` | No | Accent colour for this message, for example `"#fbbf24"`. |
 | `duration` | No | Remove the message automatically after this long, for example `"01:00:00"`. |
 | `id` | No | A name for the message, so you can replace or remove it later. |
+| `urgent` | No | `true` shows it in red across the whole marquee for a few seconds before it joins the scroll. |
 
 ## Entities
 
@@ -578,6 +728,9 @@ entities:
 |---|---|
 | `sensor.grand_marquee_messages` | The number of messages. The `messages` attribute holds the list the marquee shows. |
 | `sensor.grand_marquee_news` | The number of headlines. The `headlines` attribute holds them, with their title, source, topic and link. Headlines aren't saved in your history. |
+| `sensor.grand_marquee_news_<topic>` | One per news topic and keyword, such as `sensor.grand_marquee_news_sports`. The state is the newest headline; `headlines` holds the rest. |
+| `sensor.grand_marquee_sports` | The number of games. `games` holds each one's teams, score, status and start time; `live` counts games in progress. |
+| `sensor.grand_marquee_weather_summary` | Today's weather in one sentence, such as "Partly cloudy, 72°F now, high 78°, low 61°, 20% chance of rain". `tomorrow` holds tomorrow's. |
 
 ## Automation examples
 
@@ -613,6 +766,37 @@ actions:
       id: train
       text: "Next train: {{ states('sensor.next_train') }}"
       icon: mdi:train
+```
+
+### Announce the weather every morning
+
+```yaml
+alias: Morning weather
+triggers:
+  - trigger: time
+    at: "07:00:00"
+actions:
+  - action: notify.mobile_app_your_phone
+    data:
+      message: "{{ states('sensor.grand_marquee_weather_summary') }}"
+```
+
+### Flag something urgent
+
+```yaml
+alias: Garage left open
+triggers:
+  - trigger: state
+    entity_id: cover.garage_door
+    to: open
+    for: "00:15:00"
+actions:
+  - action: grand_marquee.add_message
+    data:
+      id: garage
+      text: The garage door has been open for 15 minutes
+      icon: mdi:garage-open
+      urgent: true
 ```
 
 ### Clear the marquee at bedtime
@@ -653,6 +837,10 @@ Your browser hasn't loaded the marquee's display file. Work through these steps 
 | Weather shows no high, low or chance of rain | Your weather integration doesn't provide a forecast. The current conditions still show. Pick a different entity under **Weather** if you have one with a forecast. |
 | No headlines appear | Check that topics are ticked under **Settings → Devices & services → Grand Marquee → Configure**, and that Home Assistant can reach the internet. If the marquee says **Turn on … news**, tick that topic there. Problems reading a feed are listed in **Settings → System → Logs**. |
 | Calendar or to-do items are missing | Only events in the next **Look ahead** hours and to-do items that aren't checked off are shown. The marquee checks for changes every 10 minutes and whenever the calendar or list changes. |
+| No sports scores | Pick leagues under **Configure**. If you listed teams, check the names or abbreviations match how ESPN writes them, for example `TB` or `Lightning`. Problems reaching ESPN are listed in **Settings → System → Logs**. |
+| Board notes don't show | Glass Message Board must be installed and set up. The marquee says so if it can't find it. |
+| An alert keeps taking over the bar | Each alert takes over once when it appears. Set `urgent_repeat` to 0, or turn off **Show alerts as urgent**. |
+| The marquee disappeared at night | A `schedule` block with `hide: true` is active. |
 | A message disappeared | It reached the `duration` it was given. Leave `duration` out to keep a message until it's removed. |
 | The Marketplace doesn't offer an update | Open **Grand Marquee** in the Marketplace, open the **⋮** menu and choose **Update information**. Updates appear once a new release is published on GitHub. |
 | The marquee still looks like the old version after an update | Restart Home Assistant, then hard-refresh the browser or reset the companion app's frontend cache. The integration updates the version number in your resources automatically. |

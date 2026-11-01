@@ -23,6 +23,8 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
 from .news import DEFAULT_PER_FEED, DEFAULT_REFRESH_MINUTES, DEFAULT_TOPICS, NewsCoordinator
+from .sports import SportsCoordinator
+from .weather_summary import WeatherSummaryCoordinator
 from .resources import async_ensure_resource, resource_url
 from .const import (
     ATTR_COLOR,
@@ -33,8 +35,13 @@ from .const import (
     ATTR_TEXT,
     CARD_FILENAME,
     CARD_URL,
+    ATTR_URGENT,
     CONF_CUSTOM_FEEDS,
+    CONF_KEYWORDS,
     CONF_NEWS_TOPICS,
+    CONF_SPORTS_LEAGUES,
+    CONF_SPORTS_TEAMS,
+    CONF_WEATHER_ENTITY,
     CONF_PER_FEED,
     CONF_REFRESH_MINUTES,
     DOMAIN,
@@ -59,6 +66,7 @@ MESSAGE_SCHEMA = vol.Schema(
         vol.Optional(ATTR_COLOR): cv.string,
         vol.Optional(ATTR_DURATION): cv.positive_time_period,
         vol.Optional(ATTR_ID): cv.string,
+        vol.Optional(ATTR_URGENT): cv.boolean,
     }
 )
 ADD_SCHEMA = MESSAGE_SCHEMA
@@ -99,6 +107,8 @@ class MessageStore:
             msg["icon"] = data[ATTR_ICON]
         if data.get(ATTR_COLOR):
             msg["color"] = data[ATTR_COLOR]
+        if data.get(ATTR_URGENT):
+            msg["urgent"] = True
         if duration := data.get(ATTR_DURATION):
             if not isinstance(duration, timedelta):
                 duration = cv.positive_time_period(duration)
@@ -202,9 +212,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         custom_feeds=opts.get(CONF_CUSTOM_FEEDS, []),
         refresh_minutes=opts.get(CONF_REFRESH_MINUTES, DEFAULT_REFRESH_MINUTES),
         per_feed=opts.get(CONF_PER_FEED, DEFAULT_PER_FEED),
+        keywords=opts.get(CONF_KEYWORDS, []),
     )
     hass.data[f"{DOMAIN}_news"] = news
     entry.async_create_background_task(hass, news.async_refresh(), f"{DOMAIN} first news refresh")
+
+    # Scores for the Sports source, and today's weather as one sentence.
+    sports = SportsCoordinator(hass, opts.get(CONF_SPORTS_LEAGUES, []), opts.get(CONF_SPORTS_TEAMS, []))
+    hass.data[f"{DOMAIN}_sports"] = sports
+    if sports.leagues:
+        entry.async_create_background_task(hass, sports.async_refresh(), f"{DOMAIN} first sports refresh")
+    weather = WeatherSummaryCoordinator(hass, opts.get(CONF_WEATHER_ENTITY))
+    hass.data[f"{DOMAIN}_weather"] = weather
+    weather.start()
+    entry.async_on_unload(weather.stop)
+    entry.async_create_background_task(hass, weather.async_refresh(), f"{DOMAIN} first weather summary")
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -222,5 +244,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         for svc in (SERVICE_ADD, SERVICE_REMOVE, SERVICE_CLEAR, SERVICE_SET):
             hass.services.async_remove(DOMAIN, svc)
         hass.data.pop(DOMAIN, None)
-        hass.data.pop(f"{DOMAIN}_news", None)
+        for key in ("news", "sports", "weather"):
+            hass.data.pop(f"{DOMAIN}_{key}", None)
     return unloaded

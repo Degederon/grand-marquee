@@ -3,11 +3,62 @@
     "step": {
       "user": {
         "title": "Grand Marquee",
-        "description": "Adds a glass-styled scrolling marquee card to your dashboards and a sensor that holds its messages."
+        "description": "Adds a scrolling marquee card to your dashboards, plus sensors for its messages, news, sports and weather summary."
       }
     },
     "abort": {
       "single_instance_allowed": "Grand Marquee is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "News, sports and weather for the marquee",
+        "description": "Choose what Home Assistant fetches for the marquee. News topics and keywords come from Google News in your Home Assistant language and country. Each marquee then picks what to show in its card settings.",
+        "data": {
+          "news_topics": "News topics",
+          "news_keywords": "News about keywords (one per line, for example a team, your town or a hobby)",
+          "custom_feeds": "Extra news feeds (one web address per line)",
+          "refresh_minutes": "Check for new headlines every",
+          "headlines_per_feed": "Headlines per topic or feed",
+          "sports_leagues": "Sports leagues to follow",
+          "sports_teams": "Teams to follow (one per line, name or abbreviation; empty = all games)",
+          "weather_entity": "Weather for the weather summary sensor (empty = first one found)"
+        }
+      }
+    },
+    "error": {
+      "invalid_feed": "Each feed must be a full web address starting with http:// or https://."
+    }
+  },
+  "selector": {
+    "news_topics": {
+      "options": {
+        "top": "Top stories",
+        "world": "World",
+        "nation": "National",
+        "business": "Business",
+        "technology": "Technology",
+        "entertainment": "Entertainment",
+        "sports": "Sports",
+        "science": "Science",
+        "health": "Health"
+      }
+    },
+    "sports_leagues": {
+      "options": {
+        "nfl": "NFL",
+        "ncaaf": "College football",
+        "nba": "NBA",
+        "wnba": "WNBA",
+        "ncaab": "College basketball",
+        "mlb": "MLB",
+        "nhl": "NHL",
+        "mls": "MLS",
+        "epl": "Premier League",
+        "laliga": "LaLiga",
+        "ucl": "Champions League"
+      }
     }
   },
   "services": {
@@ -21,7 +72,7 @@
         },
         "icon": {
           "name": "Icon",
-          "description": "Optional MDI icon."
+          "description": "Optional icon."
         },
         "color": {
           "name": "Color",
@@ -34,6 +85,10 @@
         "id": {
           "name": "ID",
           "description": "Optional id, so you can replace or remove it later."
+        },
+        "urgent": {
+          "name": "Urgent",
+          "description": "Show it in red across the whole marquee for a few seconds before it joins the scroll."
         }
       }
     },
@@ -57,40 +112,8 @@
       "fields": {
         "messages": {
           "name": "Messages",
-          "description": "List of strings or message objects."
+          "description": "List of texts or message objects."
         }
-      }
-    }
-  },
-  "options": {
-    "step": {
-      "init": {
-        "title": "News for the marquee",
-        "description": "Pick the headlines the marquee's News source can show. Topics come from Google News in your Home Assistant language and country. You can also add any RSS or Atom feed, one address per line. Then choose which of these each marquee shows in its card settings.",
-        "data": {
-          "news_topics": "Topics",
-          "custom_feeds": "Extra feeds (one web address per line)",
-          "refresh_minutes": "Check for new headlines every",
-          "headlines_per_feed": "Headlines per topic or feed"
-        }
-      }
-    },
-    "error": {
-      "invalid_feed": "Each feed must be a full web address starting with http:// or https://."
-    }
-  },
-  "selector": {
-    "news_topics": {
-      "options": {
-        "top": "Top stories",
-        "world": "World",
-        "nation": "National",
-        "business": "Business",
-        "technology": "Technology",
-        "entertainment": "Entertainment",
-        "sports": "Sports",
-        "science": "Science",
-        "health": "Health"
       }
     }
   }

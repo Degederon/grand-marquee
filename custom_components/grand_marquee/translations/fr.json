@@ -1,0 +1,120 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Grand Marquee",
+        "description": "Ajoute un bandeau défilant à vos tableaux de bord, ainsi que des capteurs pour ses messages, actualités, sports et résumé météo."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Grand Marquee est déjà configuré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Actualités, sports et météo pour le bandeau",
+        "description": "Choisissez ce que Home Assistant récupère pour le bandeau. Les sujets et mots-clés d'actualité viennent de Google Actualités dans la langue et le pays de votre Home Assistant. Chaque bandeau choisit ensuite quoi afficher dans les réglages de sa carte.",
+        "data": {
+          "news_topics": "Sujets d'actualité",
+          "news_keywords": "Actualités par mots-clés (un par ligne, par exemple une équipe, votre ville ou un loisir)",
+          "custom_feeds": "Flux d'actualités supplémentaires (une adresse web par ligne)",
+          "refresh_minutes": "Chercher de nouveaux titres toutes les",
+          "headlines_per_feed": "Titres par sujet ou flux",
+          "sports_leagues": "Ligues à suivre",
+          "sports_teams": "Équipes à suivre (une par ligne, nom ou abréviation ; vide = tous les matchs)",
+          "weather_entity": "Météo pour le capteur de résumé (vide = la première trouvée)"
+        }
+      }
+    },
+    "error": {
+      "invalid_feed": "Chaque flux doit être une adresse web complète commençant par http:// ou https://."
+    }
+  },
+  "selector": {
+    "news_topics": {
+      "options": {
+        "top": "À la une",
+        "world": "Monde",
+        "nation": "National",
+        "business": "Économie",
+        "technology": "Technologie",
+        "entertainment": "Divertissement",
+        "sports": "Sports",
+        "science": "Sciences",
+        "health": "Santé"
+      }
+    },
+    "sports_leagues": {
+      "options": {
+        "nfl": "NFL",
+        "ncaaf": "Football américain universitaire",
+        "nba": "NBA",
+        "wnba": "WNBA",
+        "ncaab": "Basket universitaire",
+        "mlb": "MLB",
+        "nhl": "NHL",
+        "mls": "MLS",
+        "epl": "Premier League",
+        "laliga": "LaLiga",
+        "ucl": "Ligue des champions"
+      }
+    }
+  },
+  "services": {
+    "add_message": {
+      "name": "Ajouter un message",
+      "description": "Ajoute un message au bandeau. Réutiliser un id remplace ce message.",
+      "fields": {
+        "text": {
+          "name": "Texte",
+          "description": "Texte du message."
+        },
+        "icon": {
+          "name": "Icône",
+          "description": "Icône facultative."
+        },
+        "color": {
+          "name": "Couleur",
+          "description": "Couleur d'accent facultative (hex ou r,g,b)."
+        },
+        "duration": {
+          "name": "Durée",
+          "description": "Supprime le message automatiquement après ce délai."
+        },
+        "id": {
+          "name": "ID",
+          "description": "Id facultatif pour le remplacer ou le supprimer plus tard."
+        },
+        "urgent": {
+          "name": "Urgent",
+          "description": "L'affiche en rouge sur tout le bandeau quelques secondes avant qu'il rejoigne le défilement."
+        }
+      }
+    },
+    "remove_message": {
+      "name": "Supprimer un message",
+      "description": "Supprime un message par son id.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Id du message à supprimer."
+        }
+      }
+    },
+    "clear_messages": {
+      "name": "Effacer les messages",
+      "description": "Supprime tous les messages du bandeau."
+    },
+    "set_messages": {
+      "name": "Définir les messages",
+      "description": "Remplace tous les messages d'un coup.",
+      "fields": {
+        "messages": {
+          "name": "Messages",
+          "description": "Liste de textes ou d'objets message."
+        }
+      }
+    }
+  }
+}

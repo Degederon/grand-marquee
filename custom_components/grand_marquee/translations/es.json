@@ -1,0 +1,120 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Grand Marquee",
+        "description": "Añade una marquesina con desplazamiento a tus paneles, además de sensores para sus mensajes, noticias, deportes y resumen del tiempo."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Grand Marquee ya está configurado."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Noticias, deportes y tiempo para la marquesina",
+        "description": "Elige lo que Home Assistant obtiene para la marquesina. Los temas y palabras clave de noticias vienen de Google News en el idioma y país de tu Home Assistant. Luego cada marquesina elige qué mostrar en la configuración de su tarjeta.",
+        "data": {
+          "news_topics": "Temas de noticias",
+          "news_keywords": "Noticias sobre palabras clave (una por línea, por ejemplo un equipo, tu ciudad o una afición)",
+          "custom_feeds": "Fuentes de noticias adicionales (una dirección web por línea)",
+          "refresh_minutes": "Buscar titulares nuevos cada",
+          "headlines_per_feed": "Titulares por tema o fuente",
+          "sports_leagues": "Ligas a seguir",
+          "sports_teams": "Equipos a seguir (uno por línea, nombre o abreviatura; vacío = todos los partidos)",
+          "weather_entity": "Tiempo para el sensor de resumen (vacío = el primero que se encuentre)"
+        }
+      }
+    },
+    "error": {
+      "invalid_feed": "Cada fuente debe ser una dirección web completa que empiece por http:// o https://."
+    }
+  },
+  "selector": {
+    "news_topics": {
+      "options": {
+        "top": "Portada",
+        "world": "Mundo",
+        "nation": "Nacional",
+        "business": "Economía",
+        "technology": "Tecnología",
+        "entertainment": "Entretenimiento",
+        "sports": "Deportes",
+        "science": "Ciencia",
+        "health": "Salud"
+      }
+    },
+    "sports_leagues": {
+      "options": {
+        "nfl": "NFL",
+        "ncaaf": "Fútbol americano universitario",
+        "nba": "NBA",
+        "wnba": "WNBA",
+        "ncaab": "Baloncesto universitario",
+        "mlb": "MLB",
+        "nhl": "NHL",
+        "mls": "MLS",
+        "epl": "Premier League",
+        "laliga": "LaLiga",
+        "ucl": "Liga de Campeones"
+      }
+    }
+  },
+  "services": {
+    "add_message": {
+      "name": "Añadir mensaje",
+      "description": "Añade un mensaje a la marquesina. Usar un id existente reemplaza ese mensaje.",
+      "fields": {
+        "text": {
+          "name": "Texto",
+          "description": "Texto del mensaje."
+        },
+        "icon": {
+          "name": "Icono",
+          "description": "Icono opcional."
+        },
+        "color": {
+          "name": "Color",
+          "description": "Color de acento opcional (hex o r,g,b)."
+        },
+        "duration": {
+          "name": "Duración",
+          "description": "Elimina el mensaje automáticamente después de este tiempo."
+        },
+        "id": {
+          "name": "ID",
+          "description": "Id opcional para reemplazarlo o eliminarlo más tarde."
+        },
+        "urgent": {
+          "name": "Urgente",
+          "description": "Lo muestra en rojo en toda la marquesina unos segundos antes de unirse al desplazamiento."
+        }
+      }
+    },
+    "remove_message": {
+      "name": "Eliminar mensaje",
+      "description": "Elimina un mensaje por su id.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "Id del mensaje que se eliminará."
+        }
+      }
+    },
+    "clear_messages": {
+      "name": "Borrar mensajes",
+      "description": "Elimina todos los mensajes de la marquesina."
+    },
+    "set_messages": {
+      "name": "Establecer mensajes",
+      "description": "Reemplaza todos los mensajes a la vez.",
+      "fields": {
+        "messages": {
+          "name": "Mensajes",
+          "description": "Lista de textos u objetos de mensaje."
+        }
+      }
+    }
+  }
+}

@@ -15,6 +15,7 @@ import html
 import logging
 import re
 from typing import Any
+from urllib.parse import quote_plus
 import xml.etree.ElementTree as ET
 
 import aiohttp
@@ -56,6 +57,19 @@ def topic_url(topic: str, language: str, country: str) -> str:
     if section is None:
         return f"https://news.google.com/rss?{query}"
     return f"https://news.google.com/rss/headlines/section/topic/{section}?{query}"
+
+
+def keyword_url(keyword: str, language: str, country: str) -> str:
+    """Google News search feed for a keyword, such as a team, a town or a hobby."""
+    lang = (language or "en").split("-")[0].lower()
+    ctry = (country or "US").upper()
+    return f"https://news.google.com/rss/search?q={quote_plus(keyword)}&hl={lang}-{ctry}&gl={ctry}&ceid={ctry}:{lang}"
+
+
+def keyword_key(keyword: str) -> str:
+    """Stable category key for a keyword topic, e.g. 'kw:tampa-bay-lightning'."""
+    slug = re.sub(r"[^a-z0-9]+", "-", keyword.casefold()).strip("-")
+    return f"kw:{slug or 'search'}"
 
 
 def _local(tag: str) -> str:
@@ -112,7 +126,7 @@ def parse_feed(body: str, category: str, label: str, limit: int) -> tuple[str, l
         # Google News titles end with " - Source Name"; keep the source separately.
         if source and title.endswith(f" - {source}"):
             title = title[: -len(source) - 3].rstrip()
-        elif not source and " - " in title and category in TOPICS:
+        elif not source and " - " in title and (category in TOPICS or category.startswith("kw:")):
             head, tail = title.rsplit(" - ", 1)
             if len(tail) <= 40:
                 title, source = head, tail
@@ -142,6 +156,7 @@ class NewsCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         custom_feeds: list[str],
         refresh_minutes: int,
         per_feed: int,
+        keywords: list[str] | None = None,
     ) -> None:
         super().__init__(
             hass,
@@ -152,12 +167,25 @@ class NewsCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         self.topics = [t for t in topics if t in TOPICS]
         self.custom_feeds = [u.strip() for u in custom_feeds if u.strip()]
         self.per_feed = max(1, int(per_feed))
+        self.keywords = [k.strip() for k in (keywords or []) if k.strip()]
+
+    def categories(self) -> dict[str, str]:
+        """Every category this coordinator fetches: key -> label."""
+        cats = {t: TOPICS[t][0] for t in self.topics}
+        cats.update({keyword_key(k): k for k in self.keywords})
+        if self.custom_feeds:
+            cats["custom"] = "Your own feeds"
+        return cats
+
+    def for_category(self, key: str) -> list[dict[str, Any]]:
+        return [h for h in (self.data or []) if h["category"] == key]
 
     def _feeds(self) -> list[tuple[str, str, str]]:
         """(url, category, label) for everything selected."""
         lang = self.hass.config.language or "en"
         country = self.hass.config.country or "US"
         feeds = [(topic_url(t, lang, country), t, TOPICS[t][0]) for t in self.topics]
+        feeds += [(keyword_url(k, lang, country), keyword_key(k), k) for k in self.keywords]
         feeds += [(url, "custom", "") for url in self.custom_feeds]
         return feeds
 

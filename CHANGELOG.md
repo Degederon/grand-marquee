@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.2.0] - 2026-11-01
+
+### Added
+
+- **Eight new things to show**, each picked under **What to show**:
+  - **Weather alerts** from alert entities such as Meteoalarm or NWS alerts. They always come first, in red.
+  - **Sports scores:** live scores, upcoming games and final results for the leagues and teams you follow (NFL, NBA, MLB, NHL, MLS, Premier League and more).
+  - **Countdowns** to dates you type in ("Christmas: 12-25") or events in a calendar, such as birthdays.
+  - **Message board notes** from Glass Message Board, followed live, pinned notes first.
+  - **Who's home** and **Commute** (travel time sensors).
+  - **News about keywords:** add your team, your town or a hobby under **Configure**, and each becomes its own topic.
+- **Urgent items:** urgent messages (`urgent: true` on `grand_marquee.add_message`) and weather alerts take over the bar in red for a few seconds, then join the scroll. Tap to dismiss early.
+- **Flip mode:** show one item at a time with a fade or slide; long items glide across before the next.
+- **Time of day:** a `schedule` changes any setting by time of day and day of the week, or hides the marquee during quiet hours.
+- **Tap actions:** tap a headline to open the article, or tap a message to remove it.
+- **Colours per category** for each source's icon and tag.
+- **Opacity** setting for the whole marquee.
+- **New sensors:** one per news topic and keyword, a Sports sensor, and a Weather summary sensor with today's forecast in one sentence, for automations and notifications.
+- **Languages:** the card, its editor, its text and the integration's settings are now in English, Spanish, French and German.
+- Four new pictures in the tour: urgent alerts, sports, flip mode, and countdowns with who's home.
+
+### Changed
+
+- The device now shows **by Degederon** under Service info.
+- News topic tags use the full topic name in your language (for example "Technology").
+
 ## [1.1.0] - 2026-11-01
 
 ### Added

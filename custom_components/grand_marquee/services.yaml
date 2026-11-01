@@ -21,6 +21,10 @@ add_message:
       example: dinner
       selector:
         text:
+    urgent:
+      example: true
+      selector:
+        boolean:
 
 remove_message:
   fields:

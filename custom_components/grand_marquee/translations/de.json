@@ -1,0 +1,120 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Grand Marquee",
+        "description": "Fügt deinen Dashboards ein Laufband hinzu, dazu Sensoren für seine Nachrichten, News, Sport und eine Wetterzusammenfassung."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Grand Marquee ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "News, Sport und Wetter für das Laufband",
+        "description": "Wähle, was Home Assistant für das Laufband abruft. News-Themen und Stichwörter kommen von Google News in der Sprache und dem Land deines Home Assistant. Jedes Laufband wählt dann in seinen Karteneinstellungen, was es zeigt.",
+        "data": {
+          "news_topics": "News-Themen",
+          "news_keywords": "News zu Stichwörtern (eins pro Zeile, zum Beispiel ein Team, dein Ort oder ein Hobby)",
+          "custom_feeds": "Weitere News-Feeds (eine Webadresse pro Zeile)",
+          "refresh_minutes": "Nach neuen Schlagzeilen suchen alle",
+          "headlines_per_feed": "Schlagzeilen pro Thema oder Feed",
+          "sports_leagues": "Ligen, denen du folgst",
+          "sports_teams": "Teams, denen du folgst (eins pro Zeile, Name oder Kürzel; leer = alle Spiele)",
+          "weather_entity": "Wetter für den Zusammenfassungssensor (leer = das erste gefundene)"
+        }
+      }
+    },
+    "error": {
+      "invalid_feed": "Jeder Feed muss eine vollständige Webadresse sein, die mit http:// oder https:// beginnt."
+    }
+  },
+  "selector": {
+    "news_topics": {
+      "options": {
+        "top": "Schlagzeilen",
+        "world": "Welt",
+        "nation": "Inland",
+        "business": "Wirtschaft",
+        "technology": "Technik",
+        "entertainment": "Unterhaltung",
+        "sports": "Sport",
+        "science": "Wissenschaft",
+        "health": "Gesundheit"
+      }
+    },
+    "sports_leagues": {
+      "options": {
+        "nfl": "NFL",
+        "ncaaf": "College Football",
+        "nba": "NBA",
+        "wnba": "WNBA",
+        "ncaab": "College-Basketball",
+        "mlb": "MLB",
+        "nhl": "NHL",
+        "mls": "MLS",
+        "epl": "Premier League",
+        "laliga": "LaLiga",
+        "ucl": "Champions League"
+      }
+    }
+  },
+  "services": {
+    "add_message": {
+      "name": "Nachricht hinzufügen",
+      "description": "Fügt dem Laufband eine Nachricht hinzu. Eine vorhandene ID ersetzt diese Nachricht.",
+      "fields": {
+        "text": {
+          "name": "Text",
+          "description": "Nachrichtentext."
+        },
+        "icon": {
+          "name": "Symbol",
+          "description": "Optionales Symbol."
+        },
+        "color": {
+          "name": "Farbe",
+          "description": "Optionale Akzentfarbe (Hex oder r,g,b)."
+        },
+        "duration": {
+          "name": "Dauer",
+          "description": "Entfernt die Nachricht automatisch nach dieser Zeit."
+        },
+        "id": {
+          "name": "ID",
+          "description": "Optionale ID, um sie später zu ersetzen oder zu entfernen."
+        },
+        "urgent": {
+          "name": "Dringend",
+          "description": "Zeigt sie einige Sekunden rot über das ganze Laufband, bevor sie mitläuft."
+        }
+      }
+    },
+    "remove_message": {
+      "name": "Nachricht entfernen",
+      "description": "Entfernt eine Nachricht anhand ihrer ID.",
+      "fields": {
+        "id": {
+          "name": "ID",
+          "description": "ID der zu entfernenden Nachricht."
+        }
+      }
+    },
+    "clear_messages": {
+      "name": "Nachrichten löschen",
+      "description": "Entfernt alle Nachrichten vom Laufband."
+    },
+    "set_messages": {
+      "name": "Nachrichten festlegen",
+      "description": "Ersetzt alle Nachrichten auf einmal.",
+      "fields": {
+        "messages": {
+          "name": "Nachrichten",
+          "description": "Liste von Texten oder Nachrichtenobjekten."
+        }
+      }
+    }
+  }
+}
