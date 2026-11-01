@@ -16,10 +16,10 @@ from .const import DOMAIN, SIGNAL_UPDATED
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    async_add_entities([GlassMarqueeMessagesSensor(hass, entry)])
+    async_add_entities([GrandMarqueeMessagesSensor(hass, entry)])
 
 
-class GlassMarqueeMessagesSensor(SensorEntity):
+class GrandMarqueeMessagesSensor(SensorEntity):
     """State = number of messages; attribute `messages` holds the list."""
 
     _attr_has_entity_name = True
@@ -31,11 +31,11 @@ class GlassMarqueeMessagesSensor(SensorEntity):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self._store = hass.data[DOMAIN]
         self._attr_unique_id = f"{entry.entry_id}_messages"
-        self.entity_id = "sensor.glass_marquee_messages"
+        self.entity_id = "sensor.grand_marquee_messages"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": "Glass Marquee",
-            "manufacturer": "Glass Marquee",
+            "name": "Grand Marquee",
+            "manufacturer": "Grand Marquee",
             "entry_type": "service",
         }
 

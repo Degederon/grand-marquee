@@ -1,9 +1,9 @@
 /*
- * Glass Marquee Card — smooth, glass-styled scrolling ticker for Home Assistant.
- * Shipped and auto-registered by the glass_marquee integration (can also be
+ * Grand Marquee — smooth, glass-styled scrolling ticker for Home Assistant.
+ * Shipped and auto-registered by the grand_marquee integration (can also be
  * added manually as a dashboard resource).
  */
-const GM_VERSION = "1.1.0";
+const GM_VERSION = "1.0.0";
 
 // `plain` is the solid background used when style: plain and no custom color is set.
 const THEMES = {
@@ -86,7 +86,7 @@ const DEFAULTS = {
   empty_text: "No messages",
 };
 
-const DEFAULT_ENTITY = "sensor.glass_marquee_messages";
+const DEFAULT_ENTITY = "sensor.grand_marquee_messages";
 
 /* ---------- helpers ---------- */
 function toRGB(v, fallback) {
@@ -106,16 +106,16 @@ const esc = (s) =>
 const num = (v, d) => (v === undefined || v === null || v === "" || isNaN(+v) ? d : +v);
 
 /* ---------- card ---------- */
-class GlassMarqueeCard extends HTMLElement {
+class GrandMarqueeCard extends HTMLElement {
   static getConfigElement() {
-    return document.createElement("glass-marquee-card-editor");
+    return document.createElement("grand-marquee-editor");
   }
 
   static getStubConfig(hass) {
     const hasSensor = hass && hass.states && hass.states[DEFAULT_ENTITY];
     return hasSensor
       ? { entity: DEFAULT_ENTITY, theme: "frost" }
-      : { theme: "frost", messages: ["Welcome home ✨", "Add messages with glass_marquee.add_message"] };
+      : { theme: "frost", messages: ["Welcome home ✨", "Add messages with grand_marquee.add_message"] };
   }
 
   constructor() {
@@ -590,7 +590,7 @@ const LABELS = {
   hide_when_empty: "Hide when empty",
 };
 
-class GlassMarqueeCardEditor extends HTMLElement {
+class GrandMarqueeEditor extends HTMLElement {
   setConfig(config) {
     this._config = { ...config };
     this._render();
@@ -663,18 +663,18 @@ class GlassMarqueeCardEditor extends HTMLElement {
   }
 }
 
-if (!customElements.get("glass-marquee-card")) customElements.define("glass-marquee-card", GlassMarqueeCard);
-if (!customElements.get("glass-marquee-card-editor")) customElements.define("glass-marquee-card-editor", GlassMarqueeCardEditor);
+if (!customElements.get("grand-marquee")) customElements.define("grand-marquee", GrandMarqueeCard);
+if (!customElements.get("grand-marquee-editor")) customElements.define("grand-marquee-editor", GrandMarqueeEditor);
 
 window.customCards = window.customCards || [];
-if (!window.customCards.some((c) => c.type === "glass-marquee-card")) {
+if (!window.customCards.some((c) => c.type === "grand-marquee")) {
   window.customCards.push({
-    type: "glass-marquee-card",
-    name: "Glass Marquee",
+    type: "grand-marquee",
+    name: "Grand Marquee",
     description: "Smooth scrolling ticker — glass or plain, with configurable colors and fonts.",
     preview: true,
     documentationURL: "https://github.com/Degederon/grand-marquee",
   });
 }
 
-console.info(`%c GLASS-MARQUEE %c ${GM_VERSION} `, "background:#7dd3fc;color:#0f172a;border-radius:4px 0 0 4px;padding:2px 4px;font-weight:700", "background:#0f172a;color:#7dd3fc;border-radius:0 4px 4px 0;padding:2px 4px");
+console.info(`%c GRAND-MARQUEE %c ${GM_VERSION} `, "background:#7dd3fc;color:#0f172a;border-radius:4px 0 0 4px;padding:2px 4px;font-weight:700", "background:#0f172a;color:#7dd3fc;border-radius:0 4px 4px 0;padding:2px 4px");

@@ -1,4 +1,4 @@
-"""Glass Marquee — a glass-styled scrolling message ticker for Home Assistant."""
+"""Grand Marquee — a glass-styled scrolling message ticker for Home Assistant."""
 
 from __future__ import annotations
 
@@ -22,6 +22,7 @@ from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import dt as dt_util
 
+from .resources import async_ensure_resource, resource_url
 from .const import (
     ATTR_COLOR,
     ATTR_DURATION,
@@ -31,7 +32,6 @@ from .const import (
     ATTR_TEXT,
     CARD_FILENAME,
     CARD_URL,
-    CARD_URL_BASE,
     DOMAIN,
     SERVICE_ADD,
     SERVICE_CLEAR,
@@ -40,7 +40,6 @@ from .const import (
     SIGNAL_UPDATED,
     STORAGE_KEY,
     STORAGE_VERSION,
-    VERSION,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -140,14 +139,18 @@ class MessageStore:
 
 
 async def _register_card(hass: HomeAssistant) -> None:
-    """Serve the bundled card and load it on every dashboard automatically."""
+    """Serve the marquee and make sure dashboards load the current version of it.
+
+    The card is added to Settings > Dashboards > Resources (and kept on the
+    current version after updates). If that isn't possible, for example with
+    dashboards in YAML mode, it is injected into every page instead.
+    """
     if hass.data.get(f"{DOMAIN}_card_registered"):
         return
     path = Path(__file__).parent / "frontend" / CARD_FILENAME
-    await hass.http.async_register_static_paths(
-        [StaticPathConfig(f"{CARD_URL_BASE}/{CARD_FILENAME}", str(path), False)]
-    )
-    add_extra_js_url(hass, f"{CARD_URL}?v={VERSION}")
+    await hass.http.async_register_static_paths([StaticPathConfig(CARD_URL, str(path), False)])
+    if not await async_ensure_resource(hass):
+        add_extra_js_url(hass, resource_url())
     hass.data[f"{DOMAIN}_card_registered"] = True
 
 
