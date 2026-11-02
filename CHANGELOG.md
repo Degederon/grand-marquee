@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented in this file.
 
+## [1.2.1] - 2026-11-02
+
+### Fixed
+
+- **The marquee now keeps scrolling on computers set to reduce motion.** When Windows' **Animation effects** (or Android's **Remove animations**) was off, Edge and Chrome asked pages for less motion and the marquee stopped. It now scrolls anyway; turn on **Stop scrolling when the device asks for less motion** to get the old behaviour.
+- Leaving a view while an urgent item was showing no longer leaves the marquee stuck.
+- Tapping the marquee on a touch screen no longer pauses it as if a mouse were hovering. **Pause on hover** now only reacts to a real mouse.
+- Text no longer jumps when the weather, news or calendar changes; it stays exactly where it was.
+- If the marquee is shown before the page has finished laying out, it now waits and starts instead of standing still.
+
+### Added
+
+- A safety net: every few seconds the marquee checks it's still scrolling, and restarts if anything stalled it. It also restarts when you come back to the browser tab.
+- `respect_reduced_motion` option (off by default).
+
 ## [1.2.0] - 2026-11-01
 
 ### Added

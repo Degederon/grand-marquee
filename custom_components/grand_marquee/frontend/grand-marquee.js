@@ -3,7 +3,7 @@
  * Shipped and auto-registered by the grand_marquee integration (can also be
  * added manually as a dashboard resource).
  */
-const GM_VERSION = "1.2.0";
+const GM_VERSION = "1.2.1";
 
 // `plain` is the solid background used when style: plain and no custom color is set.
 const THEMES = {
@@ -170,6 +170,7 @@ const STRINGS = {
     flip_seconds: "Seconds per item", flip_effect: "Transition", fx_fade: "Fade", fx_slide: "Slide up",
     urgent_seconds: "Show urgent items for", urgent_repeat: "Repeat urgent items every (0 = once)",
     open_links: "Tap a headline to open it", dismiss_on_tap: "Tap a message to remove it", tap_to_pause: "Tap to pause",
+    respect_reduced_motion: "Stop scrolling when the device asks for less motion",
     sec: "s", min: "min",
   },
   es: {
@@ -217,6 +218,7 @@ const STRINGS = {
     flip_seconds: "Segundos por elemento", flip_effect: "Transición", fx_fade: "Fundido", fx_slide: "Deslizar hacia arriba",
     urgent_seconds: "Mostrar lo urgente durante", urgent_repeat: "Repetir lo urgente cada (0 = una vez)",
     open_links: "Tocar un titular para abrirlo", dismiss_on_tap: "Tocar un mensaje para quitarlo", tap_to_pause: "Tocar para pausar",
+    respect_reduced_motion: "Detener el desplazamiento si el dispositivo pide menos movimiento",
     sec: "s", min: "min",
   },
   fr: {
@@ -264,6 +266,7 @@ const STRINGS = {
     flip_seconds: "Secondes par élément", flip_effect: "Transition", fx_fade: "Fondu", fx_slide: "Glisser vers le haut",
     urgent_seconds: "Afficher l'urgent pendant", urgent_repeat: "Répéter l'urgent toutes les (0 = une fois)",
     open_links: "Appuyer sur un titre pour l'ouvrir", dismiss_on_tap: "Appuyer sur un message pour le retirer", tap_to_pause: "Appuyer pour mettre en pause",
+    respect_reduced_motion: "Arrêter le défilement si l'appareil demande moins d'animations",
     sec: "s", min: "min",
   },
   de: {
@@ -311,6 +314,7 @@ const STRINGS = {
     flip_seconds: "Sekunden pro Eintrag", flip_effect: "Übergang", fx_fade: "Überblenden", fx_slide: "Nach oben schieben",
     urgent_seconds: "Dringendes zeigen für", urgent_repeat: "Dringendes wiederholen alle (0 = einmal)",
     open_links: "Schlagzeile antippen zum Öffnen", dismiss_on_tap: "Nachricht antippen zum Entfernen", tap_to_pause: "Antippen zum Pausieren",
+    respect_reduced_motion: "Nicht laufen lassen, wenn das Gerät weniger Bewegung wünscht",
     sec: "s", min: "Min.",
   },
 };
@@ -444,6 +448,9 @@ class GrandMarqueeCard extends HTMLElement {
     if (this._config) this._applyPosition();
     if (this._config && this._hass) this._ensureSources();
     if (this._base) { this._startScheduleTimer(); this._applyEffective(); }
+    this._startWatchdog();
+    if (this._urgentQueue && this._urgentQueue.length) setTimeout(() => { if (!this._urgentShowing) this._nextUrgent(); }, 500);
+    if (this._config && this._config.mode === "flip" && this._track && this._items && this._items.length && !this._flipRun) this._startFlip();
     this._scheduleMeasure();
   }
 
@@ -458,6 +465,12 @@ class GrandMarqueeCard extends HTMLElement {
     clearInterval(this._schedTimer); this._schedTimer = null;
     clearInterval(this._urgentTimer); this._urgentTimer = null;
     clearTimeout(this._urgentHide);
+    clearInterval(this._watchdog); this._watchdog = null;
+    if (this._onVisible) { document.removeEventListener("visibilitychange", this._onVisible); this._onVisible = null; }
+    if (this._banner) this._banner.classList.remove("show");
+    this._urgentShowing = false;
+    this._urgentHold = false;
+    this._paused = false;
     this._flipRun = null;
   }
 
@@ -646,7 +659,7 @@ class GrandMarqueeCard extends HTMLElement {
         .glass.plain .label { box-shadow: none; background: rgba(${rgb(p.accent)}, 0.18); }
         .glass.plain .item { text-shadow: none; }
         .glass.plain .sep { text-shadow: none; }
-        @media (prefers-reduced-motion: reduce) { .track { will-change: auto; } }
+
       </style>
       <ha-card>
         <div class="glass${p.plain ? " plain" : ""}">
@@ -665,8 +678,9 @@ class GrandMarqueeCard extends HTMLElement {
     this._observed = false;
 
     if (c.pause_on_hover) {
-      this._viewport.addEventListener("mouseenter", () => this._setPaused(true));
-      this._viewport.addEventListener("mouseleave", () => this._setPaused(false));
+      // Only a real mouse pauses on hover; a tap on a touch screen fires these too and would stick.
+      this._viewport.addEventListener("pointerenter", (e) => { if (e.pointerType === "mouse") this._setPaused(true); });
+      this._viewport.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") this._setPaused(false); });
     }
     // Taps: open a headline, remove a message, or pause / resume (wall tablets).
     this._viewport.addEventListener("click", (e) => {
@@ -1305,7 +1319,7 @@ class GrandMarqueeCard extends HTMLElement {
 
   _holdForUrgent(on) {
     this._urgentHold = on;
-    if (this._anim) { if (on) this._anim.pause(); else if (!this._paused) this._anim.play(); }
+    if (this._anim) { if (on) this._anim.pause(); else if (!this._shouldHold()) this._anim.play(); }
   }
 
   /* ----- flip mode: one item at a time, long ones glide across ----- */
@@ -1377,12 +1391,17 @@ class GrandMarqueeCard extends HTMLElement {
     if (this._config.mode === "flip") return;
     const groups = this._track.querySelectorAll(".group");
     if (!groups.length) return;
-    // Keep one source group, then measure it.
-    groups.forEach((g, i) => i && g.remove());
     const first = groups[0];
     const groupW = first.getBoundingClientRect().width;
     const viewW = this._viewport.getBoundingClientRect().width;
-    if (!groupW || !viewW) return;
+    if (!groupW || !viewW) {
+      // Not laid out yet (hidden view, tab, or still loading): leave things as they are and try again.
+      clearTimeout(this._retry);
+      this._retry = setTimeout(() => this._scheduleMeasure(), 500);
+      return;
+    }
+    // Keep one source group, then clone it to fill the width.
+    groups.forEach((g, i) => i && g.remove());
 
     // Clone the group until the strip is at least one viewport + one group wide,
     // so shifting by exactly one group width loops with no visible seam.
@@ -1399,26 +1418,64 @@ class GrandMarqueeCard extends HTMLElement {
       ? [{ transform: `translate3d(${-groupW}px,0,0)` }, { transform: "translate3d(0,0,0)" }]
       : [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(${-groupW}px,0,0)` }];
 
-    // Preserve where we were so content/size updates don't make the text jump.
+    // Keep the text exactly where it was (in pixels) so updates don't make it jump.
     let progress = 0;
     if (this._anim) {
       const t = this._anim.currentTime || 0;
-      const d = this._anim.effect.getTiming().duration || 1;
-      progress = (t % d) / d;
+      const oldD = this._anim.effect.getTiming().duration || 1;
+      const oldW = this._lastGroupW || groupW;
+      const px = ((t % oldD) / oldD) * oldW;
+      progress = (px % groupW) / groupW;
       this._anim.cancel();
     }
+    this._lastGroupW = groupW;
 
-    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     this._anim = this._track.animate(keyframes, { duration, iterations: Infinity, easing: "linear" });
     this._anim.currentTime = progress * duration;
-    if (this._paused || this._urgentHold || (reduce && this._config.respect_reduced_motion !== false)) this._anim.pause();
+    if (this._shouldHold()) this._anim.pause();
+  }
+
+  // The device's "reduce motion" setting (Windows Animation effects, Android Remove animations).
+  // A ticker that doesn't move isn't useful, so it's only honoured when `respect_reduced_motion: true`.
+  _reducedMotion() {
+    return this._config.respect_reduced_motion === true
+      && !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  _shouldHold() {
+    return !!(this._paused || this._urgentHold || this._reducedMotion());
+  }
+
+  /* Safety net: every few seconds, make sure the scroll is running when nothing should be holding it. */
+  _startWatchdog() {
+    clearInterval(this._watchdog);
+    this._watchdog = setInterval(() => this._checkRunning(), 3000);
+    if (!this._onVisible) {
+      this._onVisible = () => { if (document.visibilityState === "visible") this._checkRunning(true); };
+      document.addEventListener("visibilitychange", this._onVisible);
+    }
+  }
+
+  _checkRunning(force) {
+    const c = this._config;
+    if (!c || !this.isConnected || !this._track || c.mode === "flip") return;
+    if (!this._items || !this._items.length) return;
+    // A stale hold from an urgent banner that can no longer be showing.
+    if (this._urgentHold && !(this._banner && this._banner.classList.contains("show"))) {
+      this._urgentHold = false;
+      this._urgentShowing = false;
+    }
+    if (this._shouldHold()) return;
+    const groups = this._track.querySelectorAll(".group").length;
+    const state = this._anim && this._anim.playState;
+    if (force || !this._anim || state !== "running" || groups < 2) this._scheduleMeasure();
   }
 
   _setPaused(p) {
     this._paused = p;
     if (!this._anim) return;
     if (p) this._anim.pause();
-    else if (!this._urgentHold) this._anim.play();
+    else if (!this._shouldHold()) this._anim.play();
   }
 }
 
@@ -1544,6 +1601,7 @@ function buildSchema(c, lang, hass) {
       { name: "dismiss_on_tap", selector: { boolean: {} } },
       { name: "tap_to_pause", selector: { boolean: {} } },
       { name: "pause_on_hover", selector: { boolean: {} } },
+      { name: "respect_reduced_motion", selector: { boolean: {} } },
     ] },
   ];
 
@@ -1639,7 +1697,7 @@ class GrandMarqueeEditor extends HTMLElement {
     const defaults = {
       weather_tomorrow: false, news_count: 8, news_source: true, calendar_count: 6, calendar_hours: 24, todo_count: 5,
       show_tags: true, sports_count: 8, countdown_days: 90, board_count: 8, board_drawings: true, alerts_urgent: true,
-      tap_to_pause: true, opacity: 1,
+      tap_to_pause: true, opacity: 1, respect_reduced_motion: false,
     };
     for (const [k, v] of Object.entries(defaults)) if (data[k] === undefined) data[k] = v;
     return data;

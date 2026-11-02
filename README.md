@@ -6,7 +6,7 @@
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz/docs/faq/custom_repositories)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.11%2B-18BCF2.svg?logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
-[![Version](https://img.shields.io/badge/version-1.2.0-6E56CF.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.2.1-6E56CF.svg)](CHANGELOG.md)
 [![Languages](https://img.shields.io/badge/languages-English%20%7C%20Deutsch%20%7C%20Espa%C3%B1ol%20%7C%20Fran%C3%A7ais-2E9E6B.svg)](#languages)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -259,6 +259,7 @@ messages:
 | `open_links`, `dismiss_on_tap` | `true`, `false` | Tap a headline to open it; tap a message to remove it. |
 | `schedule` | – | Different settings by time of day. See [Time of day and quiet hours](#time-of-day-and-quiet-hours). |
 | `opacity` | 1 | Make the whole marquee more see-through, from 0.1 to 1. |
+| `respect_reduced_motion` | `false` | Stop scrolling when the device's reduce-motion setting is on (Windows **Animation effects** off, Android **Remove animations**, iOS **Reduce Motion**). |
 | `news_count`, `news_source` | 8, `true` | How many headlines, and whether to show where each one is from. |
 | `calendar_entities`, `calendar_count`, `calendar_hours` | all, 6, 24 | Which calendars, how many events, and how many hours ahead to look. |
 | `todo_entities`, `todo_count` | all, 5 | Which to-do lists, and how many items to name per list. |
@@ -852,7 +853,7 @@ Your browser hasn't loaded the marquee's display file. Work through these steps 
 | The pinned marquee covers something | Move the card to the top of the dashboard and turn on **Leave room so it doesn't cover cards** under **Layout & placement**. You can also change **Edge offset**, or switch **Placement** to the other edge. |
 | The font didn't change | Web fonts need internet access on the display. Check the tablet is online, or choose a font that isn't downloaded (theme, System, Serif, Monospace or Rounded). |
 | The colours look washed out on the glass style | The glass lets the background show through. Raise **Tint strength**, or switch **Style** to **Plain** for a solid colour. |
-| The marquee isn't moving | It may be paused: tap it once. If the device has **Reduce motion** turned on, the marquee stays still on purpose. |
+| The marquee isn't moving | Update to 1.2.1 or later, restart Home Assistant and hard-refresh the browser (**Ctrl + Shift + R**). If it's still, it may be paused: tap it once. If **Stop scrolling when the device asks for less motion** is on, it stays still on devices with reduce motion turned on. |
 | Weather shows no high, low or chance of rain | Your weather integration doesn't provide a forecast. The current conditions still show. Pick a different entity under **Weather** if you have one with a forecast. |
 | No headlines appear | Check that topics are ticked under **Settings → Devices & services → Grand Marquee → Configure**, and that Home Assistant can reach the internet. If the marquee says **Turn on … news**, tick that topic there. Problems reading a feed are listed in **Settings → System → Logs**. |
 | Calendar or to-do items are missing | Only events in the next **Look ahead** hours and to-do items that aren't checked off are shown. The marquee checks for changes every 10 minutes and whenever the calendar or list changes. |
